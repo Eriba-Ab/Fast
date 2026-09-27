@@ -1,0 +1,1252 @@
+<!doctype html>
+<html lang="en-NG">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taraba Central Billing and Collections</title>
+<meta name="description" content="Taraba State Internal Revenue Service: central billing, collections dashboard and reports.">
+<link rel="icon" href="data:image/png;base64,__SEAL__">
+<style>
+@font-face{font-family:"Nunito";font-style:normal;font-weight:400 800;font-display:swap;
+  src:url(data:font/woff2;base64,__FONT_LATIN_EXT__) format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Nunito";font-style:normal;font-weight:400 800;font-display:swap;
+  src:url(data:font/woff2;base64,__FONT_LATIN__) format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+
+:root{
+  color-scheme:light;
+  --band:#0b3d2e;
+  --band-glow:radial-gradient(72.52% 42.88% at 73.32% 82.63%,rgba(102,255,178,.24) 0%,rgba(255,255,255,0) 100%),
+              radial-gradient(43.33% 47.76% at 50.77% 72.86%,rgba(50,205,50,.15) 0%,rgba(255,255,255,0) 100%),
+              radial-gradient(65.71% 43.42% at 22.18% 90.23%,rgba(0,128,0,.2) 35%,rgba(255,255,255,0) 100%),#0b3d2e;
+  --on-band:#fff;
+  --on-band-2:rgba(255,255,255,.85);
+  --on-band-3:rgba(255,255,255,.66);
+  --on-band-line:rgba(255,255,255,.14);
+  --mint:#72e3ad;
+  --bg:#f7f6f4;
+  --card:#fff;
+  --raised:#fbfaf9;
+  --border:#e3e2e0;
+  --border-strong:#d2d0cb;
+  --fg:#171717;
+  --fg-2:#3f3f3d;
+  --fg-3:#6b6a67;
+  --primary:#275941;
+  --primary-hover:#1d4632;
+  --primary-soft:#e9f3ed;
+  --series:#277a55;
+  --series-hover:#1c5e41;
+  --track:#eceae6;
+  --size-1:#82d2a8;--size-2:#389469;--size-3:#1a5439;
+  --class-1:#007d50;--class-2:#d27908;
+  --neg:#b42318;
+  --neg-soft:#fdecea;
+  --pos:#17744a;
+  --ring:rgba(39,89,65,.35);
+  --shadow-outline:0 0 0 1px rgba(0,0,0,.08),0 1px 2px rgba(30,32,36,.06),0 4px 10px -2px rgba(0,0,0,.035);
+  --shadow-pop:0 0 0 1px rgba(0,0,0,.08),0 8px 24px -6px rgba(16,24,20,.18);
+  --radius:8px;
+  --radius-lg:12px;
+  --side:236px;
+  --max:1320px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scrollbar-color:#c9c7c2 transparent}
+body{margin:0;background:var(--bg);color:var(--fg);font:500 15px/1.5 "Nunito",ui-sans-serif,system-ui,"Segoe UI",sans-serif;
+  letter-spacing:-.015em;-webkit-font-smoothing:antialiased;overflow-x:hidden;caret-color:var(--primary)}
+::selection{background:rgba(114,227,173,.45);color:var(--fg)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#cfcdc8;border-radius:10px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+a{color:var(--primary);text-underline-offset:3px;text-decoration-thickness:1px}
+a:hover{color:var(--primary-hover)}
+button,input,select{font:inherit;letter-spacing:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+h1,h2,h3{margin:0;letter-spacing:-.025em;text-wrap:balance}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Band (GovPayHub header) ---------- */
+.band{background:var(--band-glow);color:var(--on-band);position:relative}
+.band :focus-visible{outline-color:var(--mint)}
+.band-inner{max-width:var(--max);margin:0 auto;padding:22px 24px 104px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:inline-flex;align-items:center;gap:12px;color:var(--on-band);text-decoration:none}
+.brand:hover{color:var(--on-band)}
+.brand img{width:44px;height:44px}
+.brand strong{display:block;font-size:16px;font-weight:700;line-height:1.2;letter-spacing:-.02em}
+.brand span span{display:block;font-size:13px;color:var(--on-band-3);font-weight:600}
+.menu-btn{display:none;align-items:center;gap:8px;background:none;border:0;color:var(--on-band);font-size:17px;font-weight:600;padding:6px 0}
+.menu-bars{position:relative;width:16px;height:12px}
+.menu-bars i{position:absolute;left:0;width:16px;height:2px;background:currentColor;transition:transform .15s,top .15s}
+.menu-bars i:first-child{top:2px}.menu-bars i:last-child{top:8px}
+.menu-open .menu-bars i:first-child{top:5px;transform:rotate(45deg)}
+.menu-open .menu-bars i:last-child{top:5px;transform:rotate(-45deg)}
+
+.band-body{margin-top:44px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:48px;align-items:end;min-height:236px}
+.band-body.simple{display:block;min-height:0;margin-top:52px}
+.band h1{font-size:44px;line-height:1.12;font-weight:650;font-variation-settings:"wght" 650}
+.band h1 .amt{white-space:nowrap}
+.band-lede{margin-top:12px;max-width:34rem;font-size:16.5px;line-height:1.45;color:var(--on-band-2);font-weight:500}
+.band-lede b{color:var(--on-band);font-weight:700}
+.band .exact{font-variant-numeric:tabular-nums}
+
+/* scope switch (on band) */
+.scope{margin-top:26px;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.seg{display:inline-flex;padding:3px;border-radius:10px;background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.seg button{border:0;background:none;color:var(--on-band-2);font-weight:650;font-size:14px;padding:7px 14px;border-radius:7px;transition:background .15s,color .15s}
+.seg button:hover{color:var(--on-band);background:rgba(255,255,255,.07)}
+.seg button[aria-checked="true"]{background:#fff;color:var(--band);box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.band-select{appearance:none;-webkit-appearance:none;border:0;border-radius:9px;padding:9px 34px 9px 13px;font-size:14px;font-weight:650;
+  color:var(--on-band);background:rgba(255,255,255,.08) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E") no-repeat right 12px center;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.band-select option{color:var(--fg);background:#fff}
+.band-select:hover{background-color:rgba(255,255,255,.13)}
+
+/* band column chart: the calendar is the chart */
+.bchart{position:relative;height:236px;padding-left:52px}
+.bgrid{position:absolute;left:0;right:0;top:22px;bottom:28px;pointer-events:none}
+.bgrid div{position:absolute;left:52px;right:0;border-top:1px solid var(--on-band-line)}
+.bgrid span{position:absolute;right:calc(100% + 10px);top:-9px;font-size:12px;color:var(--on-band-3);font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bgrid div:first-child{border-top-color:rgba(255,255,255,.3)}
+.bcols{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));height:100%}
+.bcol{display:grid;grid-template-rows:22px 1fr 28px;background:none;border:0;padding:0;color:var(--on-band-3);border-radius:6px;min-width:0}
+.bcol .plot{position:relative;display:flex;align-items:flex-end;justify-content:center}
+.bcol .bar{width:min(26px,62%);border-radius:4px 4px 0 0;background:rgba(255,255,255,.3);transition:height .32s cubic-bezier(.16,1,.3,1),background .15s}
+.bcol.in .bar{background:var(--mint)}
+.bcol.out .bar{background:rgba(255,255,255,.26)}
+.bcol:hover .bar{background:rgba(255,255,255,.6)}
+.bcol.in:hover .bar{background:#9ff0c9}
+.bcol .mon{font-size:12.5px;font-weight:650;align-self:end;padding-bottom:2px}
+.bcol.sel .mon{color:var(--on-band)}
+.bcol .val{align-self:end;font-size:12px;font-weight:700;color:var(--on-band);white-space:nowrap;font-variant-numeric:tabular-nums;pointer-events:none}
+.bcol:focus-visible{outline-offset:-1px}
+.bchart-note{margin-top:6px;padding-left:52px;font-size:12.5px;color:var(--on-band-3);font-weight:600}
+
+/* ---------- Shell: sidebar + sheet ---------- */
+.shell{max-width:var(--max);margin:0 auto;display:flex;gap:36px;padding:0 24px 72px}
+.side{width:var(--side);flex:none;padding-top:28px}
+.side-inner{position:sticky;top:20px}
+.side h3{font-size:12px;line-height:24px;text-transform:uppercase;letter-spacing:.02em;color:var(--fg-3);font-weight:700;padding:0 8px;margin:0 0 4px}
+.side section+section{margin-top:26px}
+.nav-link{display:flex;align-items:center;gap:12px;padding:7px 12px;border-radius:8px;color:var(--fg-3);font-weight:650;font-size:14.5px;text-decoration:none;transition:color .12s,background .12s}
+.nav-link svg{color:#8a8985}
+.nav-link:hover{color:var(--fg)}
+.nav-link:hover svg{color:var(--fg)}
+.nav-link[aria-current="page"]{background:var(--card);color:var(--fg);box-shadow:var(--shadow-outline)}
+.nav-link[aria-current="page"] svg{color:var(--primary)}
+.side-note{padding:4px 12px;font-size:13px;line-height:1.5;color:var(--fg-3)}
+.side-note b{color:var(--fg-2);font-weight:700}
+
+.sheet{flex:1;min-width:0;margin-top:-72px;background:var(--card);border-radius:var(--radius-lg);box-shadow:var(--shadow-outline);padding:8px 32px 36px;position:relative}
+
+/* section heading (GovPayHub: 2px primary rule sitting on a hairline) */
+.sec{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-top:1px solid var(--border);margin-top:36px}
+.sec:first-child{margin-top:20px}
+.sec h2{margin-top:-1px;border-top:2px solid var(--primary);padding-top:14px;font-size:15.5px;font-weight:750;color:var(--fg-3);letter-spacing:-.01em}
+.sec-aside{font-size:13.5px;color:var(--fg-3);font-weight:600;padding-bottom:1px}
+.sec + .sec-body{margin-top:18px}
+
+/* toolbar row */
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:20px 0 4px}
+.toolbar .scope-pill{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+.toolbar .scope-pill small{font-size:13.5px;font-weight:600;color:var(--fg-3)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--series);box-shadow:0 0 0 3px var(--primary-soft)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:38px;padding:0 15px;border-radius:8px;border:0;font-size:14px;font-weight:700;
+  text-decoration:none;white-space:nowrap;transition:background .15s,box-shadow .15s,color .15s}
+.btn svg.i{width:16px;height:16px}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.15),inset 0 1px 0 rgba(255,255,255,.08)}
+.btn-primary:hover{background:var(--primary-hover);color:#fff}
+.btn-quiet{background:var(--card);color:var(--fg);box-shadow:0 0 0 1px var(--border-strong),0 1px 2px rgba(0,0,0,.05)}
+.btn-quiet:hover{background:var(--raised);color:var(--fg);box-shadow:0 0 0 1px #bfbdb7,0 1px 2px rgba(0,0,0,.06)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{height:32px;padding:0 11px;font-size:13px}
+.linkish{background:none;border:0;padding:0;color:var(--primary);font-weight:700;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+
+/* figure grid (GovPayHub feature grid: gap-px hairlines) */
+.figs{display:grid;grid-template-columns:minmax(0,1.25fr) repeat(2,minmax(0,1fr));gap:1px;background:var(--border);border-radius:var(--radius);overflow:hidden;
+  box-shadow:0 0 0 1px var(--border),0 1px 2px rgba(0,0,0,.04)}
+.fig{background:var(--card);padding:18px 20px 20px;min-width:0}
+.fig.lead-cell{grid-row:span 2;display:flex;flex-direction:column;justify-content:center;padding:24px 26px}
+.fig.lead-cell .fig-value{font-size:32px;margin-top:12px}
+.fig-label{font-size:13.5px;color:var(--fg-3);font-weight:650}
+.fig-value{margin-top:10px;font-size:23px;line-height:1.15;font-weight:700;letter-spacing:-.025em;overflow-wrap:anywhere}
+.fig-value.lead{font-size:27px}
+.fig-sub{margin-top:6px;font-size:13px;color:var(--fg-3);font-weight:600;line-height:1.4}
+.delta{display:inline-flex;align-items:center;gap:6px}
+.delta svg.i{width:20px;height:20px}
+.delta.up{color:var(--pos)}.delta.down{color:var(--neg)}
+.muted-val{color:var(--fg-3)}
+
+/* panels */
+.grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:40px}
+.panel h3{font-size:16px;font-weight:750;color:var(--fg)}
+.panel-sub{margin-top:3px;font-size:13.5px;color:var(--fg-3);font-weight:600}
+
+/* horizontal bars: label + value line, bar beneath */
+.hbars{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}
+.hbar{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:5px;padding:3px 6px;margin:0 -6px;border-radius:6px;cursor:default;outline:none}
+.hbar:hover,.hbar:focus-visible{background:var(--raised)}
+.hbar:focus-visible{box-shadow:0 0 0 2px var(--primary)}
+.hbar .lab{font-size:14px;font-weight:650;color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbar .val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.hbar .val small{font-weight:600;color:var(--fg-3);font-size:12.5px;margin-left:6px}
+.hbar .track{grid-column:1/-1;height:10px;border-radius:0 4px 4px 0;background:linear-gradient(var(--track),var(--track)) no-repeat left center/100% 2px}
+.hbar .fill{display:block;height:10px;border-radius:0 4px 4px 0;background:var(--series);transition:width .32s cubic-bezier(.16,1,.3,1),background .15s;min-width:2px}
+.hbar:hover .fill,.hbar:focus-visible .fill{background:var(--series-hover)}
+.note{margin-top:14px;font-size:13px;color:var(--fg-3);font-weight:600;line-height:1.5;max-width:70ch}
+
+/* stacked split bars */
+.split{margin-top:18px}
+.split + .split{margin-top:26px}
+.split h4{margin:0;font-size:14px;font-weight:750;color:var(--fg-2)}
+.stack{display:flex;gap:2px;height:22px;margin-top:10px}
+.stack span{display:block;height:100%;min-width:2px;transition:flex-grow .32s cubic-bezier(.16,1,.3,1)}
+.stack span:first-child{border-radius:4px 0 0 4px}
+.stack span:last-child{border-radius:0 4px 4px 0}
+.stack span:hover{filter:brightness(1.12)}
+.legend{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px}
+.legend li{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;align-items:center;gap:10px;font-size:14px}
+.legend .sw{width:12px;height:12px;border-radius:3px}
+.legend .nm{font-weight:650;color:var(--fg-2)}
+.legend .amt{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.legend .pc{width:52px;text-align:right;color:var(--fg-3);font-weight:650;font-variant-numeric:tabular-nums;font-size:13px}
+.legend .cnt{grid-column:2/-1;margin-top:-4px;font-size:12.5px;color:var(--fg-3);font-weight:600}
+
+/* tables */
+.table-wrap{margin-top:14px;overflow-x:auto;border-radius:var(--radius);box-shadow:0 0 0 1px var(--border)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:10px 14px;text-align:left;white-space:nowrap}
+thead th{position:sticky;top:0;background:var(--raised);font-size:12.5px;font-weight:750;color:var(--fg-3);border-bottom:1px solid var(--border);letter-spacing:0}
+tbody td{border-bottom:1px solid #efeeeb;color:var(--fg-2)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#fafaf8}
+td.r,th.r{text-align:right;font-variant-numeric:tabular-nums}
+td.strong{color:var(--fg);font-weight:700}
+td .sub{display:block;font-size:12.5px;color:var(--fg-3);font-weight:600}
+td.wrap{white-space:normal;min-width:200px}
+tfoot td{font-weight:800;color:var(--fg);background:var(--raised);border-top:1px solid var(--border)}
+th button.sort{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+th button.sort:hover{color:var(--fg)}
+th button.sort:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:3px}
+th[aria-sort] button.sort{color:var(--fg)}
+.sort-ic{width:10px;opacity:.55}
+th[aria-sort] .sort-ic{opacity:1}
+.rank{color:var(--fg-3);font-weight:700;width:36px}
+.tlink{color:var(--fg);font-weight:700;text-decoration:none}
+.tlink:hover{color:var(--primary);text-decoration:underline}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:700;padding:2px 9px 2px 7px;border-radius:999px}
+td .sub .pill{margin-top:3px;padding:1px 8px 1px 6px}
+.pill svg.i{width:14px;height:14px}
+.pill.ok{background:var(--primary-soft);color:var(--pos)}
+.pill.due{background:var(--neg-soft);color:var(--neg)}
+
+/* form controls */
+.filters{display:grid;grid-template-columns:minmax(220px,2fr) repeat(4,minmax(0,1fr)) auto;gap:10px;align-items:end;margin-top:20px}
+.field{display:grid;gap:6px;min-width:0}
+.field label,.field .flabel{font-size:13px;font-weight:700;color:var(--fg-2)}
+.input,.select{height:40px;width:100%;border-radius:8px;border:0;background:var(--card);box-shadow:0 0 0 1px var(--border-strong),0 1px 2px rgba(0,0,0,.04);padding:0 12px;font-size:14.5px;font-weight:600;color:var(--fg)}
+.input::placeholder{color:#7a7975;font-weight:500}
+.input:hover,.select:hover{box-shadow:0 0 0 1px #b9b7b1,0 1px 2px rgba(0,0,0,.05)}
+.input:focus,.select:focus{outline:none;box-shadow:0 0 0 1px var(--primary),0 0 0 4px var(--ring)}
+.select{appearance:none;-webkit-appearance:none;padding-right:34px;text-overflow:ellipsis;
+  background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236b6a67' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E") no-repeat right 12px center}
+.search{position:relative}
+.search svg.i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--fg-3);width:17px;height:17px;pointer-events:none}
+.search .input{padding-left:38px}
+.input[aria-invalid="true"]{box-shadow:0 0 0 1px var(--neg),0 0 0 4px rgba(180,35,24,.14)}
+
+.results-meta{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-top:22px}
+.results-meta p{font-size:14px;color:var(--fg-3);font-weight:600}
+.results-meta p b{color:var(--fg);font-weight:750}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;font-size:14px;color:var(--fg-3);font-weight:600}
+
+.empty{padding:40px 24px;text-align:center;border-radius:var(--radius);box-shadow:0 0 0 1px var(--border);margin-top:14px;background:var(--raised)}
+.empty h3{font-size:17px;font-weight:750}
+.empty p{margin:6px auto 16px;max-width:46ch;color:var(--fg-3);font-weight:600;font-size:14px}
+
+/* reports */
+.params{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:36px;margin-top:20px}
+.daterow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{height:30px;padding:0 11px;border-radius:999px;border:0;background:var(--card);box-shadow:0 0 0 1px var(--border-strong);font-size:13px;font-weight:700;color:var(--fg-2);transition:background .12s,box-shadow .12s,color .12s}
+.chip:hover{background:var(--raised);color:var(--fg)}
+.chip[aria-pressed="true"]{background:var(--primary);color:#fff;box-shadow:0 0 0 1px var(--primary)}
+.coverage{margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--primary-soft);color:#1f4a36;font-size:14px;font-weight:650;line-height:1.45;display:flex;gap:10px}
+.coverage svg.i{margin-top:1px;color:var(--pos)}
+.coverage.err{background:var(--neg-soft);color:var(--neg)}
+.coverage.err svg.i{color:var(--neg)}
+.rtypes{display:grid;gap:6px}
+.rtype{display:grid;grid-template-columns:18px 1fr;gap:10px;align-items:start;padding:10px 12px;border-radius:8px;box-shadow:0 0 0 1px var(--border);cursor:pointer;transition:box-shadow .12s,background .12s}
+.rtype:hover{background:var(--raised);box-shadow:0 0 0 1px var(--border-strong)}
+.rtype input{margin:3px 0 0;accent-color:var(--primary);width:16px;height:16px}
+.rtype b{display:block;font-size:14.5px;font-weight:750;color:var(--fg)}
+.rtype span{display:block;font-size:13px;color:var(--fg-3);font-weight:600;line-height:1.4}
+.rtype:has(input:checked){background:var(--primary-soft);box-shadow:0 0 0 1.5px var(--primary)}
+.rtype:has(input:focus-visible){outline:2px solid var(--primary);outline-offset:2px}
+.opt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+.report-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px;align-items:center}
+.report-actions p{font-size:13px;color:var(--fg-3);font-weight:600}
+.preview-title{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.preview-title h3{font-size:17px;font-weight:750}
+.preview-title p{font-size:13.5px;color:var(--fg-3);font-weight:600}
+.print-head{display:none}
+
+/* notice */
+.lookup{position:relative;max-width:560px;margin-top:22px}
+.lookup-list{list-style:none;margin:6px 0 0;padding:6px;border-radius:10px;background:var(--card);box-shadow:var(--shadow-pop);position:absolute;left:0;right:0;z-index:5;max-height:360px;overflow:auto}
+.lookup-list[hidden]{display:none}
+.lookup-list a{display:block;padding:8px 10px;border-radius:7px;text-decoration:none;color:var(--fg)}
+.lookup-list a:hover,.lookup-list a:focus-visible,.lookup-list a.act{background:var(--primary-soft);outline:none}
+.lookup-list b{font-weight:750}
+.lookup-list small{display:block;color:var(--fg-3);font-weight:600;font-size:12.5px}
+.notice-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-top:22px}
+.paper{margin:18px auto 0;max-width:820px;background:#fff;border-radius:6px;box-shadow:0 0 0 1px var(--border),0 10px 30px -12px rgba(16,24,20,.18);padding:40px 44px 36px;position:relative;overflow:hidden}
+.doc-head{display:grid;grid-template-columns:72px 1fr auto;gap:18px;align-items:center;padding-bottom:20px;border-bottom:2px solid var(--band)}
+.doc-head img{width:72px;height:72px}
+.doc-head .gov{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--band)}
+.doc-head h2{font-size:22px;font-weight:800;margin-top:2px;color:var(--fg)}
+.doc-head .svc{font-size:13.5px;font-weight:650;color:var(--fg-3);margin-top:2px}
+.doc-no{text-align:right}
+.doc-no small{display:block;font-size:11.5px;font-weight:750;color:var(--fg-3);letter-spacing:.04em;text-transform:uppercase}
+.doc-no b{display:block;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.doc-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 28px;padding:20px 0}
+.doc-meta dt{font-size:11.5px;font-weight:750;color:var(--fg-3);letter-spacing:.04em;text-transform:uppercase}
+.doc-meta dd{margin:2px 0 0;font-size:14.5px;font-weight:700;color:var(--fg)}
+.doc-meta .wide{grid-column:1/-1}
+.doc-table{font-size:14px}
+.doc-table th{position:static;background:#f3f6f4;color:var(--band);font-size:12px;letter-spacing:.03em;text-transform:uppercase}
+.doc-table td{color:var(--fg);white-space:normal}
+.doc-table tr.subtotal td{font-weight:750;background:#fafaf8}
+.doc-table tr.grand td{font-weight:800;font-size:15.5px;background:#f3f6f4;border-top:2px solid var(--band);color:var(--band)}
+.doc-words{margin-top:12px;font-size:13.5px;color:var(--fg-2);font-weight:650;line-height:1.5}
+.doc-words i{font-style:normal;color:var(--fg);font-weight:750}
+.doc-h{margin:26px 0 0;font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--band)}
+.months-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--border);border-radius:6px;overflow:hidden;margin-top:10px;box-shadow:0 0 0 1px var(--border)}
+.months-grid div{background:#fff;padding:9px 12px}
+.months-grid small{display:block;font-size:12px;color:var(--fg-3);font-weight:700}
+.months-grid b{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums}
+.doc-status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;margin-top:14px;background:var(--border);border-radius:6px;overflow:hidden;box-shadow:0 0 0 1px var(--border)}
+.doc-status div{background:#fff;padding:12px 14px}
+.doc-status small{display:block;font-size:12px;color:var(--fg-3);font-weight:700}
+.doc-status b{display:block;margin-top:2px;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.doc-status .ok b{color:var(--pos)}
+.doc-status .due b{color:var(--neg)}
+.doc-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--border);font-size:12.5px;color:var(--fg-3);font-weight:600;line-height:1.55;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.doc-note{margin-top:10px;font-size:12.5px;color:var(--fg-3);font-weight:600}
+
+/* tooltip */
+#tip{position:fixed;z-index:50;pointer-events:none;background:#fff;color:var(--fg);border-radius:9px;box-shadow:var(--shadow-pop);padding:10px 12px;min-width:170px;max-width:280px;
+  opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
+#tip.on{opacity:1;transform:none}
+#tip .t-val{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+#tip .t-lab{font-size:13px;font-weight:700;color:var(--fg-2);margin-top:1px}
+#tip .t-row{font-size:12.5px;color:var(--fg-3);font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
+
+/* loading / error */
+.loading{padding:28px 0}
+.sk{border-radius:8px;background:linear-gradient(90deg,#f0efec 0%,#f7f6f4 50%,#f0efec 100%);background-size:200% 100%;animation:sh 1.4s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.band .sk{background:linear-gradient(90deg,rgba(255,255,255,.08),rgba(255,255,255,.16),rgba(255,255,255,.08));background-size:200% 100%}
+.fatal{padding:40px 0;max-width:60ch}
+.fatal h2{font-size:20px;font-weight:800}
+.fatal p{margin-top:8px;color:var(--fg-2);font-weight:600}
+
+/* ---------- responsive ---------- */
+@media (max-width:1180px){
+  .filters{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .filters .search-field{grid-column:1/-1}
+}
+@media (max-width:980px){
+  .band-body{grid-template-columns:1fr;gap:28px;min-height:0}
+  .params{grid-template-columns:1fr}
+}
+@media (max-width:900px){
+  .menu-btn{display:inline-flex}
+  .side{position:fixed;inset:0 0 auto 0;top:0;z-index:40;width:auto;padding:0;background:transparent;pointer-events:none}
+  .side-inner{position:absolute;top:78px;left:12px;right:12px;background:var(--card);border-radius:12px;box-shadow:var(--shadow-pop);padding:16px 10px;
+    opacity:0;transform:translateY(-6px);transition:opacity .15s,transform .15s;visibility:hidden}
+  .menu-open .side{pointer-events:auto}
+  .menu-open .side-inner{opacity:1;transform:none;visibility:visible}
+  .shell{padding:0 0 48px;display:block}
+  .sheet{margin-top:-56px;border-radius:0;padding:4px 16px 28px}
+  .band-inner{padding:18px 16px 80px}
+  .band h1{font-size:32px}
+  .band-lede{font-size:15px}
+  .grid-2{grid-template-columns:1fr;gap:32px}
+  .opt-grid{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .figs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fig.lead-cell{grid-column:span 2;grid-row:auto;padding:16px 14px 18px}
+  .fig.lead-cell .fig-value{font-size:24px}
+  .fig{padding:14px 14px 16px}
+  .fig-value{font-size:19px}
+  .fig-value.lead{font-size:22px}
+  .filters{grid-template-columns:1fr 1fr}
+  .bchart{height:200px;padding-left:44px}
+  .bgrid div{left:44px}
+  .bcol .mon{font-size:11px}
+  .bcol .val{font-size:10.5px}
+  .bchart-note{padding-left:44px}
+  .band h1{font-size:28px}
+  .paper{padding:28px 18px;border-radius:0;margin-left:-16px;margin-right:-16px}
+  .doc-head{grid-template-columns:52px 1fr}
+  .doc-head img{width:52px;height:52px}
+  .doc-no{grid-column:1/-1;text-align:left}
+  .doc-meta{grid-template-columns:1fr}
+  .months-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .doc-status{grid-template-columns:1fr}
+  .daterow{grid-template-columns:1fr}
+  .toolbar .actions{width:100%}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* ---------- print ---------- */
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff;font-size:12.5px}
+  .band,.side,.no-print,#tip{display:none!important}
+  .shell{display:block;padding:0;max-width:none}
+  .sheet{margin:0;box-shadow:none;padding:0;border-radius:0}
+  .paper{box-shadow:none;margin:0;max-width:none;padding:0 0 0 0}
+
+  .print-head{display:flex;align-items:center;gap:14px;padding-bottom:12px;border-bottom:2px solid var(--band);margin-bottom:8px}
+  .print-head img{width:48px;height:48px}
+  .print-head b{display:block;font-size:16px}
+  .print-head span{font-size:12px;color:var(--fg-3)}
+  .table-wrap{overflow:visible;box-shadow:none}
+  thead th{position:static}
+  table{font-size:11px}
+  th,td{padding:5px 8px}
+  .sec{break-after:avoid}
+  tr{break-inside:avoid}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="band">
+    <div class="band-inner">
+      <div class="topbar">
+        <a class="brand" href="#/dashboard">
+          <img src="data:image/png;base64,__SEAL__" alt="Taraba State Government coat of arms">
+          <span><strong>Taraba Central Billing and Collections</strong><span>Taraba State Internal Revenue Service</span></span>
+        </a>
+        <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="side"><span class="menu-bars"><i></i><i></i></span>Menu</button>
+      </div>
+      <div class="band-body" id="band">
+        <div>
+          <div class="sk" style="height:48px;width:78%"></div>
+          <div class="sk" style="height:18px;width:62%;margin-top:18px"></div>
+          <div class="sk" style="height:18px;width:48%;margin-top:10px"></div>
+        </div>
+        <div class="sk" style="height:200px"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="side" id="side" aria-label="Main">
+      <div class="side-inner">
+        <section>
+          <h3>Overview</h3>
+          <a class="nav-link" href="#/dashboard" data-route="dashboard"><svg class="i" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Collections dashboard</a>
+        </section>
+        <section>
+          <h3>Billing</h3>
+          <a class="nav-link" href="#/registry" data-route="registry"><svg class="i" viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6M9 11h.01M15 11h.01"/></svg>Taxpayer registry</a>
+          <a class="nav-link" href="#/notice" data-route="notice"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Demand notices</a>
+        </section>
+        <section>
+          <h3>Reporting</h3>
+          <a class="nav-link" href="#/reports" data-route="reports"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Reports and downloads</a>
+        </section>
+        <section>
+          <h3>Resources</h3>
+          <a class="nav-link" href="https://www.govpayhub.com/" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>GovPayHub public portal</a>
+          <p class="side-note" id="sourceNote"></p>
+        </section>
+      </div>
+    </nav>
+
+    <main class="sheet" id="view" tabindex="-1">
+      <div class="loading" aria-live="polite">
+        <p class="sr-only">Loading the billing registry</p>
+        <div class="sk" style="height:22px;width:30%;margin-top:14px"></div>
+        <div class="sk" style="height:110px;margin-top:22px"></div>
+        <div class="sk" style="height:280px;margin-top:22px"></div>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="tip" role="tooltip" aria-hidden="true"></div>
+
+<script id="data" type="application/octet-stream">__DATA_GZ_B64__</script>
+<script>
+"use strict";
+(function(){
+/* =========================================================================
+   Formatting
+   ========================================================================= */
+const MONTHS_LONG=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS_SHORT=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const nf2=new Intl.NumberFormat("en-NG",{minimumFractionDigits:2,maximumFractionDigits:2});
+const nf0=new Intl.NumberFormat("en-NG");
+const naira=k=>(k<0?"−":"")+"₦"+nf2.format(Math.abs(k)/100);
+const plain2=k=>(Math.round(k)/100).toFixed(2);
+function compact(k){
+  const v=Math.abs(k)/100, s=k<0?"−":"";
+  if(v>=1e9) return s+"₦"+(v/1e9).toFixed(v>=1e10?1:2)+"bn";
+  if(v>=1e6) return s+"₦"+(v/1e6).toFixed(v>=1e8?0:1)+"m";
+  if(v>=1e3) return s+"₦"+(v/1e3).toFixed(v>=1e5?0:1)+"k";
+  return s+"₦"+v.toFixed(0);
+}
+const pct=(a,b,d=1)=>b?(a/b*100).toFixed(d)+"%":"–";
+const int=n=>nf0.format(n);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const mKey=m=>({y:+m.slice(0,4),mo:+m.slice(5,7)-1});
+const monthLong=m=>{const k=mKey(m);return MONTHS_LONG[k.mo]+" "+k.y};
+const monthShort=m=>MONTHS_SHORT[mKey(m).mo];
+const lastDay=(y,mo)=>new Date(Date.UTC(y,mo+1,0)).getUTCDate();
+const isoDay=(y,mo,d)=>y+"-"+String(mo+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+function dayLong(iso){const [y,m,d]=iso.split("-").map(Number);return d+" "+MONTHS_LONG[m-1]+" "+y}
+function today(){const d=new Date();return d.getDate()+" "+MONTHS_LONG[d.getMonth()]+" "+d.getFullYear()}
+
+/* Naira amount in words, for the demand notice */
+const ONES=["","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+const TENS=["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+function under1000(n){
+  let out=[];
+  if(n>=100){out.push(ONES[Math.floor(n/100)]+" hundred");n%=100;if(n)out.push("and")}
+  if(n>=20){out.push(TENS[Math.floor(n/10)]+(n%10?"-"+ONES[n%10]:""))}else if(n>0){out.push(ONES[n])}
+  return out.join(" ");
+}
+function words(n){
+  if(n===0) return "zero";
+  const scales=[[1e9,"billion"],[1e6,"million"],[1e3,"thousand"]];
+  let out=[];
+  for(const [v,name] of scales){if(n>=v){out.push(under1000(Math.floor(n/v))+" "+name);n%=v}}
+  if(n>0){ if(out.length&&n<100) out.push("and"); out.push(under1000(n)); }
+  return out.join(" ");
+}
+function amountWords(k){
+  const n=Math.floor(k/100), kb=k%100;
+  let s=words(n)+" naira";
+  if(kb) s+=", "+words(kb)+" kobo";
+  return s.charAt(0).toUpperCase()+s.slice(1)+" only";
+}
+
+/* Icons (one stroke family) */
+const IC={
+  up:'<svg class="i" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg>',
+  down:'<svg class="i" viewBox="0 0 24 24"><path d="M7 7l10 10M17 9v8H9"/></svg>',
+  flat:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
+  check:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg>',
+  alert:'<svg class="i" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5h.01"/><circle cx="12" cy="12" r="9"/></svg>',
+  info:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>',
+  dl:'<svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  print:'<svg class="i" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></svg>',
+  search:'<svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  arrow:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  back:'<svg class="i" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  swap:'<svg class="i" viewBox="0 0 24 24"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>',
+  sort:'<svg class="sort-ic" viewBox="0 0 10 14" fill="currentColor"><path d="M5 1 9 6H1zM5 13 1 8h8z"/></svg>',
+  sortAsc:'<svg class="sort-ic" viewBox="0 0 10 14" fill="currentColor"><path d="M5 3 9 9H1z"/></svg>',
+  sortDesc:'<svg class="sort-ic" viewBox="0 0 10 14" fill="currentColor"><path d="M5 11 1 5h8z"/></svg>',
+};
+
+/* =========================================================================
+   Data
+   ========================================================================= */
+let D; // decoded dataset + derived indexes
+const CLASS_LABEL={MSME:"MSMEs",INST:"Institutions"};
+
+async function loadData(){
+  const b64=document.getElementById("data").textContent.trim();
+  const bin=atob(b64); const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+  if(typeof DecompressionStream==="undefined") throw new Error("old-browser");
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  const raw=await new Response(stream).json();
+  return prepare(raw);
+}
+
+function prepare(raw){
+  const c=raw.cols, N=raw.count, M=raw.months.length, H=raw.heads.length;
+  const pay=Float64Array.from(c.pay), headAmt=Float64Array.from(c.heads);
+  // taxpayer class from the ID (TR/MSME/2025/00001 → MSME)
+  const classKeys=[]; const cls=new Uint8Array(N);
+  for(let r=0;r<N;r++){const k=(c.id[r].split("/")[1]||"Other");let i=classKeys.indexOf(k);if(i<0){classKeys.push(k);i=classKeys.length-1}cls[r]=i}
+  const classes=classKeys.map(k=>CLASS_LABEL[k]||k);
+  const headSum=new Float64Array(N), paidAll=new Float64Array(N);
+  for(let r=0;r<N;r++){let s=0;for(let h=0;h<H;h++)s+=headAmt[r*H+h];headSum[r]=s;let p=0;for(let m=0;m<M;m++)p+=pay[r*M+m];paidAll[r]=p}
+  const monthTotal=new Float64Array(M);
+  for(let r=0;r<N;r++)for(let m=0;m<M;m++)monthTotal[m]+=pay[r*M+m];
+  const years=[...new Set(raw.months.map(m=>+m.slice(0,4)))];
+  const byId=new Map(); c.id.forEach((id,i)=>byId.set(id,i));
+  const hay=new Array(N);
+  for(let r=0;r<N;r++) hay[r]=(c.id[r]+" "+c.name[r]+" "+c.addr[r]+" "+c.phone[r]+" "+raw.lgas[c.lga[r]]).toLowerCase();
+  const assessed=c.total.reduce((a,b)=>a+b,0);
+  return {...raw,N,M,H,pay,headAmt,cls,classes,headSum,paidAll,monthTotal,years,byId,hay,assessed,
+    lga:c.lga,cat:c.cat,size:c.size,total:c.total,id:c.id,name:c.name,addr:c.addr,phone:c.phone};
+}
+
+/* Aggregate a set of month indexes over rows passing `keep` */
+function aggregate(mIdx,keep){
+  const {N,M,H,pay,headAmt,headSum}=D;
+  const out={total:0,paying:0,rows:0,assessed:0,
+    lga:new Float64Array(D.lgas.length),cat:new Float64Array(D.cats.length),size:new Float64Array(D.sizes.length),cls:new Float64Array(D.classes.length),head:new Float64Array(H),
+    lgaN:new Uint32Array(D.lgas.length),catN:new Uint32Array(D.cats.length),sizeN:new Uint32Array(D.sizes.length),clsN:new Uint32Array(D.classes.length),
+    lgaReg:new Uint32Array(D.lgas.length),catReg:new Uint32Array(D.cats.length),sizeReg:new Uint32Array(D.sizes.length),clsReg:new Uint32Array(D.classes.length),
+    per:new Float64Array(N),perMonth:new Float64Array(mIdx.length)};
+  for(let r=0;r<N;r++){
+    if(keep&&!keep(r)) continue;
+    out.rows++; out.assessed+=D.total[r];
+    out.lgaReg[D.lga[r]]++; out.catReg[D.cat[r]]++; out.sizeReg[D.size[r]]++; out.clsReg[D.cls[r]]++;
+    let s=0;
+    for(let j=0;j<mIdx.length;j++){const v=pay[r*M+mIdx[j]];s+=v;out.perMonth[j]+=v}
+    out.per[r]=s;
+    if(s<=0) continue;
+    out.total+=s; out.paying++;
+    out.lga[D.lga[r]]+=s; out.lgaN[D.lga[r]]++;
+    out.cat[D.cat[r]]+=s; out.catN[D.cat[r]]++;
+    out.size[D.size[r]]+=s; out.sizeN[D.size[r]]++;
+    out.cls[D.cls[r]]+=s; out.clsN[D.cls[r]]++;
+    const hs=headSum[r];
+    if(hs>0) for(let h=0;h<H;h++) out.head[h]+=s*headAmt[r*H+h]/hs;
+  }
+  return out;
+}
+
+/* =========================================================================
+   Scope (dashboard period)
+   ========================================================================= */
+const state={
+  scope:{kind:"year",year:null,month:null}, // kind: all | year | month; month = index into D.months
+  registry:{q:"",lga:"",cat:"",size:"",cls:"",sort:"id",dir:1,page:0},
+  report:null,
+};
+function scopeMonths(sc){
+  if(sc.kind==="all") return D.months.map((_,i)=>i);
+  if(sc.kind==="year") return D.months.map((m,i)=>+m.slice(0,4)===sc.year?i:-1).filter(i=>i>=0);
+  return [sc.month];
+}
+function scopeLabel(sc){
+  if(sc.kind==="all") return "all periods";
+  if(sc.kind==="year") return String(sc.year);
+  return monthLong(D.months[sc.month]);
+}
+function spanLabel(mIdx){
+  const a=D.months[mIdx[0]], b=D.months[mIdx[mIdx.length-1]];
+  if(mIdx.length===1) return monthLong(a);
+  return monthShort(a)+" "+a.slice(0,4)+" – "+monthShort(b)+" "+b.slice(0,4);
+}
+function previousScope(sc){
+  if(sc.kind==="month") return sc.month>0?{kind:"month",month:sc.month-1}:null;
+  if(sc.kind==="year") return D.years.includes(sc.year-1)?{kind:"year",year:sc.year-1}:null;
+  return null;
+}
+function rangeOf(mIdx){
+  const a=mKey(D.months[mIdx[0]]), b=mKey(D.months[mIdx[mIdx.length-1]]);
+  return {from:isoDay(a.y,a.mo,1),to:isoDay(b.y,b.mo,lastDay(b.y,b.mo))};
+}
+
+/* =========================================================================
+   Tooltip
+   ========================================================================= */
+const tip=document.getElementById("tip");
+function showTip(target,x,y){
+  const t=target.dataset;
+  tip.innerHTML='<div class="t-val">'+esc(t.tv)+'</div><div class="t-lab">'+esc(t.tl)+'</div>'+(t.tr?t.tr.split("|").map(s=>'<div class="t-row">'+esc(s)+'</div>').join(""):"");
+  tip.classList.add("on");
+  const w=tip.offsetWidth,h=tip.offsetHeight;
+  if(x==null){const r=target.getBoundingClientRect();x=r.left+r.width/2;y=r.top}
+  let left=x+14, top=y-h-12;
+  if(left+w>innerWidth-8) left=x-w-14;
+  if(left<8) left=8;
+  if(top<8) top=y+18;
+  tip.style.left=left+"px"; tip.style.top=top+"px";
+}
+function hideTip(){tip.classList.remove("on")}
+document.addEventListener("pointermove",e=>{const t=e.target.closest&&e.target.closest("[data-tv]");if(t)showTip(t,e.clientX,e.clientY);else hideTip()});
+document.addEventListener("focusin",e=>{const t=e.target.closest&&e.target.closest("[data-tv]");if(t)showTip(t);else hideTip()});
+document.addEventListener("focusout",hideTip);
+document.addEventListener("scroll",hideTip,true);
+const tipAttrs=(tv,tl,rows)=>' data-tv="'+esc(tv)+'" data-tl="'+esc(tl)+'"'+(rows&&rows.length?' data-tr="'+esc(rows.join("|"))+'"':"");
+
+/* =========================================================================
+   Shared pieces
+   ========================================================================= */
+const band=document.getElementById("band");
+const view=document.getElementById("view");
+function simpleBand(title,lede){
+  band.className="band-body simple";
+  band.innerHTML='<h1>'+title+'</h1><p class="band-lede">'+lede+'</p>';
+}
+function sec(title,aside){return '<div class="sec"><h2>'+esc(title)+'</h2>'+(aside?'<div class="sec-aside">'+aside+'</div>':"")+'</div>'}
+function optionList(list,sel,allLabel){return '<option value="">'+esc(allLabel)+'</option>'+list.map((v,i)=>'<option value="'+i+'"'+(String(sel)===String(i)?" selected":"")+'>'+esc(v)+'</option>').join("")}
+function hbars(names,vals,counts,regs,total,opts={}){
+  const idx=names.map((_,i)=>i).filter(i=>opts.keepZero||vals[i]>0).sort((a,b)=>vals[b]-vals[a]);
+  const max=Math.max(1,...idx.map(i=>vals[i]));
+  if(!idx.length) return '<p class="note">No collections in this period.</p>';
+  return '<ol class="hbars">'+idx.map(i=>{
+    const rows=[pct(vals[i],total)+" of collections in "+opts.period];
+    if(counts) rows.push(int(counts[i])+" businesses paying"+(regs?" of "+int(regs[i])+" registered":""));
+    return '<li class="hbar" tabindex="0"'+tipAttrs(naira(vals[i]),names[i],rows)+'>'
+      +'<span class="lab">'+esc(names[i])+'</span>'
+      +'<span class="val">'+compact(vals[i])+'<small>'+pct(vals[i],total)+'</small></span>'
+      +'<span class="track"><span class="fill" style="width:'+(vals[i]/max*100).toFixed(2)+'%"></span></span></li>'}).join("")+'</ol>';
+}
+function stack(title,names,vals,counts,colors,total,period){
+  const segs=names.map((n,i)=>vals[i]>0?'<span style="flex-grow:'+vals[i]+';background:'+colors[i]+'" tabindex="0"'+tipAttrs(naira(vals[i]),n,[pct(vals[i],total)+" of collections in "+period,int(counts[i])+" businesses paying"])+'></span>':"").join("");
+  const leg=names.map((n,i)=>'<li><span class="sw" style="background:'+colors[i]+'"></span><span class="nm">'+esc(n)+'</span><span class="amt">'+compact(vals[i])+'</span><span class="pc">'+pct(vals[i],total)+'</span><span class="cnt">'+int(counts[i])+' businesses paying</span></li>').join("");
+  return '<div class="split"><h4>'+esc(title)+'</h4><div class="stack" role="img" aria-label="'+esc(title+": "+names.map((n,i)=>n+" "+pct(vals[i],total)).join(", "))+'">'+segs+'</div><ul class="legend">'+leg+'</ul></div>';
+}
+function csvDownload(filename,lines){
+  const q=v=>{const s=v==null?"":String(v);return /[",\n\r]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s};
+  const body="﻿"+lines.map(r=>r.map(q).join(",")).join("\r\n");
+  const url=URL.createObjectURL(new Blob([body],{type:"text/csv;charset=utf-8"}));
+  const a=document.createElement("a"); a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1000);
+}
+const noticeHref=id=>"#/notice/"+encodeURIComponent(id);
+
+/* =========================================================================
+   Dashboard
+   ========================================================================= */
+function niceStep(max,ticks){
+  const raw=max/ticks, mag=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/mag;
+  return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*mag;
+}
+function renderDashboard(){
+  const sc=state.scope, mIdx=scopeMonths(sc);
+  const A=aggregate(mIdx);
+  const prev=previousScope(sc), P=prev?aggregate(scopeMonths(prev)):null;
+  const period=scopeLabel(sc);
+  const yearMonths=sc.kind==="all"?D.months.map((_,i)=>i):D.months.map((m,i)=>+m.slice(0,4)===(sc.kind==="year"?sc.year:+D.months[sc.month].slice(0,4))?i:-1).filter(i=>i>=0);
+
+  /* band: headline + scope switch + the calendar chart */
+  band.className="band-body";
+  const inWord=sc.kind==="all"?"across all periods":"in "+period;
+  const lede=sc.kind==="month"
+    ? '<b class="exact">'+naira(A.total)+'</b> from '+int(A.paying)+' businesses. Select another month on the chart, or select '+esc(MONTHS_SHORT[mKey(D.months[sc.month]).mo])+' again to see the whole year.'
+    : '<b class="exact">'+naira(A.total)+'</b> from '+int(A.paying)+' businesses across '+D.lgas.length+' LGAs, '+esc(spanLabel(mIdx))+'. Select a month on the chart to focus on it.';
+  const yearOpts=D.years.map(y=>'<option value="'+y+'"'+(y===(sc.year||D.years[D.years.length-1])?" selected":"")+'>'+y+'</option>').join("");
+  const curMonth=sc.kind==="month"?sc.month:D.months.length-1;
+  const monthOpts=D.months.map((m,i)=>'<option value="'+i+'"'+(i===curMonth?" selected":"")+'>'+esc(monthLong(m))+'</option>').join("");
+  const shown=yearMonths, vals=shown.map(i=>D.monthTotal[i]);
+  const step=niceStep(Math.max(...vals),3), top=Math.ceil(Math.max(...vals)/step)*step;
+  const ticks=[]; for(let v=0;v<=top+1;v+=step) ticks.push(v);
+  const peak=shown[vals.indexOf(Math.max(...vals))];
+  const gridHtml=ticks.map(v=>'<div style="bottom:'+(v/top*100)+'%"><span>'+(v===0?"₦0":compact(v))+'</span></div>').join("");
+  const cols=shown.map((i,j)=>{
+    const inScope=mIdx.includes(i), sel=sc.kind==="month"&&sc.month===i;
+    const cls="bcol "+(inScope?"in":"out")+(sel?" sel":"");
+    const label=(sel||(sc.kind!=="month"&&i===peak))?'<span class="val">'+compact(D.monthTotal[i])+'</span>':'<span></span>';
+    const rows=[pct(D.monthTotal[i],D.assessed)+" of assessment", sel?"Select again to see the whole year":"Select to focus on this month"];
+    return '<button type="button" class="'+cls+'" data-m="'+i+'" aria-pressed="'+sel+'" aria-label="'+esc(monthLong(D.months[i])+": "+naira(D.monthTotal[i])+" collected")+'"'+tipAttrs(naira(D.monthTotal[i]),monthLong(D.months[i]),rows)+'>'
+      +label+'<span class="plot"><span class="bar" style="height:'+(D.monthTotal[i]/top*100).toFixed(2)+'%"></span></span><span class="mon">'+monthShort(D.months[i])+'</span></button>'}).join("");
+  band.innerHTML=
+    '<div><h1><span class="amt">'+compact(A.total)+'</span> collected '+esc(inWord)+'</h1>'
+    +'<p class="band-lede">'+lede+'</p>'
+    +'<div class="scope"><div class="seg" role="radiogroup" aria-label="View collections by">'
+      +'<button type="button" role="radio" data-kind="all" aria-checked="'+(sc.kind==="all")+'">All periods</button>'
+      +'<button type="button" role="radio" data-kind="year" aria-checked="'+(sc.kind==="year")+'">Year</button>'
+      +'<button type="button" role="radio" data-kind="month" aria-checked="'+(sc.kind==="month")+'">Month</button></div>'
+      +(sc.kind==="year"?'<label class="sr-only" for="yearSel">Year</label><select class="band-select" id="yearSel">'+yearOpts+'</select>':"")
+      +(sc.kind==="month"?'<label class="sr-only" for="monthSel">Month</label><select class="band-select" id="monthSel">'+monthOpts+'</select>':"")
+    +'</div></div>'
+    +'<div><div class="bchart" role="group" aria-label="Collections by month"><div class="bgrid">'+gridHtml+'</div><div class="bcols" style="--n:'+shown.length+'">'+cols+'</div></div>'
+    +'<p class="bchart-note">Monthly collections, '+esc(spanLabel(shown))+'</p></div>';
+
+  band.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.kind;
+    if(k==="all") setScope({kind:"all"});
+    else if(k==="year") setScope({kind:"year",year:sc.year||(sc.kind==="month"?+D.months[sc.month].slice(0,4):D.years[D.years.length-1])});
+    else setScope({kind:"month",month:sc.kind==="month"?sc.month:peak});
+  });
+  const ys=band.querySelector("#yearSel"); if(ys) ys.onchange=()=>setScope({kind:"year",year:+ys.value});
+  const ms=band.querySelector("#monthSel"); if(ms) ms.onchange=()=>setScope({kind:"month",month:+ms.value});
+  band.querySelectorAll(".bcol").forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.m;
+    if(sc.kind==="month"&&sc.month===i) setScope({kind:"year",year:+D.months[i].slice(0,4)});
+    else setScope({kind:"month",month:i});
+  });
+
+  /* figures */
+  let delta='<div class="fig-value muted-val">–</div><div class="fig-sub">'+(sc.kind==="all"?"Covers every month on record":"No earlier "+(sc.kind==="year"?"year":"month")+" on record")+'</div>';
+  if(P){
+    const d=A.total-P.total, r=P.total?d/P.total*100:0, dir=d>0?"up":d<0?"down":"flat";
+    delta='<div class="fig-value"><span class="delta '+dir+'">'+IC[dir]+(r>0?"+":r<0?"−":"")+Math.abs(r).toFixed(1)+'%</span></div><div class="fig-sub">'+compact(Math.abs(d))+' '+(d>=0?"more":"less")+' than '+esc(scopeLabel(prev))+'</div>';
+  }
+  const years=[...new Set(mIdx.map(i=>D.months[i].slice(0,4)))].join(", ");
+  const rng=rangeOf(mIdx);
+  const figs=
+    '<div class="figs">'
+    +'<div class="fig lead-cell"><div class="fig-label">Collected, '+esc(period)+'</div><div class="fig-value lead num">'+naira(A.total)+'</div><div class="fig-sub">'+esc(dayLong(rng.from))+' to '+esc(dayLong(rng.to))+'</div></div>'
+    +'<div class="fig"><div class="fig-label">Businesses paying</div><div class="fig-value">'+int(A.paying)+'</div><div class="fig-sub">of '+int(D.N)+' registered ('+pct(A.paying,D.N)+')</div></div>'
+    +'<div class="fig"><div class="fig-label">Average payment</div><div class="fig-value">'+naira(A.paying?A.total/A.paying:0)+'</div><div class="fig-sub">per paying business</div></div>'
+    +'<div class="fig"><div class="fig-label">'+(P?"Change on "+esc(scopeLabel(prev)):"Change on previous period")+'</div>'+delta+'</div>'
+    +'<div class="fig"><div class="fig-label">Share of assessment</div><div class="fig-value">'+pct(A.total,D.assessed)+'</div><div class="fig-sub">of '+compact(D.assessed)+' assessed for '+esc(years)+'</div></div>'
+    +'</div>';
+
+  /* top contributors */
+  const top10=[];{
+    const per=A.per;
+    for(let r=0;r<D.N;r++){const v=per[r];if(v<=0)continue;if(top10.length<10){top10.push(r);top10.sort((a,b)=>per[b]-per[a])}else if(v>per[top10[9]]){top10[9]=r;top10.sort((a,b)=>per[b]-per[a])}}
+  }
+  const topRows=top10.map((r,i)=>'<tr><td class="rank">'+(i+1)+'</td><td><a class="tlink" href="'+noticeHref(D.id[r])+'">'+esc(D.name[r])+'</a><span class="sub">'+esc(D.id[r])+'</span></td><td>'+esc(D.lgas[D.lga[r]])+'</td><td>'+esc(D.cats[D.cat[r]])+'</td><td>'+esc(D.sizes[D.size[r]])+'</td><td class="r strong">'+naira(A.per[r])+'</td></tr>').join("");
+
+  view.innerHTML=
+    '<div class="toolbar"><span class="scope-pill"><span class="dot"></span>Showing '+esc(period)+(sc.kind==="month"?"":' <small>'+esc(spanLabel(mIdx))+'</small>')+'</span>'
+    +'<div class="actions no-print"><a class="btn btn-quiet" href="#/reports" id="toReports">'+IC.dl+'Get this period as a report</a></div></div>'
+    +sec("Figures")+'<div class="sec-body" style="margin-top:18px">'+figs+'</div>'
+    +sec("Where the money came from")
+    +'<div class="grid-2" style="margin-top:20px">'
+      +'<div class="panel"><h3>By local government area</h3><p class="panel-sub">'+D.lgas.length+' LGAs, ranked by amount collected</p>'+hbars(D.lgas,A.lga,A.lgaN,A.lgaReg,A.total,{period})+'</div>'
+      +'<div class="panel"><h3>By business category</h3><p class="panel-sub">'+D.cats.length+' categories, ranked by amount collected</p>'+hbars(D.cats,A.cat,A.catN,A.catReg,A.total,{period})+'</div>'
+    +'</div>'
+    +sec("Who paid and for what")
+    +'<div class="grid-2" style="margin-top:20px">'
+      +'<div class="panel"><h3>By business size and taxpayer class</h3><p class="panel-sub">Share of '+compact(A.total)+' collected</p>'
+        +stack("Business size",D.sizes,A.size,A.sizeN,["var(--size-1)","var(--size-2)","var(--size-3)"],A.total,period)
+        +stack("Taxpayer class",D.classes,A.cls,A.clsN,["var(--class-1)","var(--class-2)","#6b6a67"],A.total,period)+'</div>'
+      +'<div class="panel"><h3>By revenue head</h3><p class="panel-sub">Apportioned from monthly receipts</p>'+hbars(D.heads,A.head,null,null,A.total,{period})
+        +'<p class="note">Payments are recorded per month, not per revenue head. Each receipt is apportioned in proportion to that business\'s assessment, so the heads add up to the amount collected.</p></div>'
+    +'</div>'
+    +sec("Top contributors",esc(period))
+    +'<div class="table-wrap"><table><thead><tr><th>#</th><th>Business</th><th>LGA</th><th>Category</th><th>Size</th><th class="r">Paid, '+esc(period)+'</th></tr></thead><tbody>'+topRows+'</tbody></table></div>';
+
+  view.querySelector("#toReports").onclick=e=>{e.preventDefault();state.report=Object.assign(defaultReport(),state.report||{},rangeOf(mIdx));location.hash="#/reports"};
+}
+function setScope(sc){
+  if(sc.kind==="year"&&sc.year==null) sc.year=D.years[D.years.length-1];
+  // the band re-renders, so return keyboard focus to the control that caused the change
+  const a=document.activeElement, key=a&&a.dataset?(a.dataset.m!=null?'.bcol[data-m="'+a.dataset.m+'"]':a.dataset.kind?'.seg [data-kind="'+sc.kind+'"]':a.id?"#"+a.id:null):null;
+  state.scope=sc; renderDashboard();
+  const again=key&&band.querySelector(key); if(again) again.focus({preventScroll:true});
+}
+
+/* =========================================================================
+   Registry
+   ========================================================================= */
+const PAGE=50;
+function registryRows(){
+  const f=state.registry, q=f.q.trim().toLowerCase();
+  const terms=q?q.split(/\s+/):[];
+  const lga=f.lga===""?-1:+f.lga, cat=f.cat===""?-1:+f.cat, size=f.size===""?-1:+f.size, cls=f.cls===""?-1:+f.cls;
+  const out=[];
+  for(let r=0;r<D.N;r++){
+    if(lga>=0&&D.lga[r]!==lga) continue;
+    if(cat>=0&&D.cat[r]!==cat) continue;
+    if(size>=0&&D.size[r]!==size) continue;
+    if(cls>=0&&D.cls[r]!==cls) continue;
+    if(terms.length){const h=D.hay[r];let ok=true;for(const t of terms){if(h.indexOf(t)<0){ok=false;break}}if(!ok)continue}
+    out.push(r);
+  }
+  const dir=f.dir, key=f.sort;
+  const cmp={
+    id:(a,b)=>a-b,
+    name:(a,b)=>D.name[a].localeCompare(D.name[b])||a-b,
+    lga:(a,b)=>D.lgas[D.lga[a]].localeCompare(D.lgas[D.lga[b]])||a-b,
+    cat:(a,b)=>D.cats[D.cat[a]].localeCompare(D.cats[D.cat[b]])||a-b,
+    size:(a,b)=>D.size[a]-D.size[b]||a-b,
+    total:(a,b)=>D.total[a]-D.total[b]||a-b,
+    paid:(a,b)=>D.paidAll[a]-D.paidAll[b]||a-b,
+  }[key];
+  out.sort((a,b)=>dir*cmp(a,b));
+  return out;
+}
+function statusPill(r){
+  const bal=D.total[r]-D.paidAll[r];
+  return bal<=0?'<span class="pill ok">'+IC.check+'Paid in full</span>':'<span class="pill due">'+IC.alert+compact(bal)+' due</span>';
+}
+function renderRegistry(){
+  const yrs=D.years.join(", ");
+  simpleBand("Taxpayer registry",int(D.N)+" businesses and institutions assessed under the "+esc(yrs)+" harmonized levy schedule, across "+D.lgas.length+" local government areas.");
+  const f=state.registry;
+  view.innerHTML=
+    sec("Find a taxpayer")
+    +'<div class="filters">'
+      +'<div class="field search-field"><label for="rq">Search</label><div class="search">'+IC.search+'<input class="input" id="rq" type="search" placeholder="Taxpayer ID, business name, address or phone" value="'+esc(f.q)+'" autocomplete="off"></div></div>'
+      +'<div class="field"><label for="rlga">LGA</label><select class="select" id="rlga">'+optionList(D.lgas,f.lga,"All LGAs")+'</select></div>'
+      +'<div class="field"><label for="rcat">Category</label><select class="select" id="rcat">'+optionList(D.cats,f.cat,"All categories")+'</select></div>'
+      +'<div class="field"><label for="rsize">Size</label><select class="select" id="rsize">'+optionList(D.sizes,f.size,"All sizes")+'</select></div>'
+      +'<div class="field"><label for="rcls">Class</label><select class="select" id="rcls">'+optionList(D.classes,f.cls,"All classes")+'</select></div>'
+      +'<div class="field"><span class="flabel" aria-hidden="true">&nbsp;</span><button class="btn btn-quiet" id="rreset" type="button">Clear</button></div>'
+    +'</div>'
+    +'<div id="rres"></div>';
+  const upd=()=>{f.page=0;drawRegistry()};
+  let t; view.querySelector("#rq").oninput=e=>{clearTimeout(t);t=setTimeout(()=>{f.q=e.target.value;upd()},140)};
+  [["rlga","lga"],["rcat","cat"],["rsize","size"],["rcls","cls"]].forEach(([id,k])=>view.querySelector("#"+id).onchange=e=>{f[k]=e.target.value;upd()});
+  view.querySelector("#rreset").onclick=()=>{Object.assign(f,{q:"",lga:"",cat:"",size:"",cls:"",page:0});renderRegistry()};
+  drawRegistry();
+}
+function drawRegistry(){
+  const f=state.registry, rows=registryRows(), box=view.querySelector("#rres");
+  const total=rows.reduce((a,r)=>a+D.total[r],0), paid=rows.reduce((a,r)=>a+D.paidAll[r],0);
+  if(!rows.length){
+    box.innerHTML='<div class="empty"><h3>No taxpayer matches'+(f.q?' “'+esc(f.q)+'”':' these filters')+'</h3><p>Check the spelling, search by the full taxpayer ID (for example TR/MSME/2025/00001), or clear the filters to see all '+int(D.N)+' records.</p><button class="btn btn-primary" type="button" id="rclear">Clear search and filters</button></div>';
+    box.querySelector("#rclear").onclick=()=>{Object.assign(f,{q:"",lga:"",cat:"",size:"",cls:"",page:0});renderRegistry()};
+    return;
+  }
+  const pages=Math.ceil(rows.length/PAGE); f.page=Math.min(f.page,pages-1);
+  const slice=rows.slice(f.page*PAGE,f.page*PAGE+PAGE);
+  const th=(k,label,right)=>{const on=f.sort===k;return '<th'+(right?' class="r"':"")+(on?' aria-sort="'+(f.dir>0?"ascending":"descending")+'"':"")+'><button class="sort" data-sort="'+k+'" type="button">'+label+(on?(f.dir>0?IC.sortAsc:IC.sortDesc):IC.sort)+'</button></th>'};
+  box.innerHTML=
+    '<div class="results-meta"><p><b>'+int(rows.length)+'</b> '+(rows.length===1?"taxpayer":"taxpayers")+' · '+compact(total)+' assessed · '+compact(paid)+' collected</p>'
+    +'<button class="btn btn-quiet btn-sm" id="rdl" type="button">'+IC.dl+'Download this list (CSV)</button></div>'
+    +'<div class="table-wrap"><table><thead><tr>'+th("id","Taxpayer ID")+th("name","Business")+th("lga","LGA and category")+th("size","Size")+th("total","Assessment",1)+th("paid","Collected",1)+'</tr></thead><tbody>'
+    +slice.map(r=>'<tr><td class="num">'+esc(D.id[r])+'</td><td class="wrap"><a class="tlink" href="'+noticeHref(D.id[r])+'">'+esc(D.name[r])+'</a><span class="sub">'+esc(D.addr[r])+'</span></td><td class="wrap" style="min-width:190px">'+esc(D.lgas[D.lga[r]])+'<span class="sub">'+esc(D.cats[D.cat[r]])+'</span></td><td>'+esc(D.sizes[D.size[r]])+'</td><td class="r">'+naira(D.total[r])+'</td><td class="r strong">'+naira(D.paidAll[r])+'<span class="sub">'+statusPill(r)+'</span></td></tr>').join("")
+    +'</tbody></table></div>'
+    +'<div class="pager"><span>Showing '+int(f.page*PAGE+1)+'–'+int(f.page*PAGE+slice.length)+' of '+int(rows.length)+'</span><span class="actions">'
+      +'<button class="btn btn-quiet btn-sm" id="rprev" type="button"'+(f.page===0?" disabled":"")+'>'+IC.back+'Previous</button>'
+      +'<button class="btn btn-quiet btn-sm" id="rnext" type="button"'+(f.page>=pages-1?" disabled":"")+'>Next'+IC.arrow+'</button></span></div>';
+  box.querySelectorAll("button.sort").forEach(b=>b.onclick=()=>{const k=b.dataset.sort;if(f.sort===k)f.dir*=-1;else{f.sort=k;f.dir=(k==="total"||k==="paid")?-1:1}f.page=0;drawRegistry();box.querySelector('button.sort[data-sort="'+k+'"]').focus()});
+  box.querySelector("#rprev").onclick=()=>{f.page--;drawRegistry();view.scrollIntoView({block:"start"})};
+  box.querySelector("#rnext").onclick=()=>{f.page++;drawRegistry();view.scrollIntoView({block:"start"})};
+  box.querySelector("#rdl").onclick=()=>{
+    const head=["Taxpayer ID","Business name","Class","LGA","Business address","Phone","Business category","Business size","Total harmonized assessment (NGN)",...D.months.map(m=>"Collected "+monthShort(m)+" "+m.slice(0,4)+" (NGN)"),"Total collected (NGN)","Balance (NGN)"];
+    const lines=[["Taraba Central Billing and Collections: taxpayer list"],["Generated "+today()+" from "+D.source],[],head];
+    rows.forEach(r=>lines.push([D.id[r],D.name[r],D.classes[D.cls[r]],D.lgas[D.lga[r]],D.addr[r],D.phone[r],D.cats[D.cat[r]],D.sizes[D.size[r]],plain2(D.total[r]),...D.months.map((_,m)=>plain2(D.pay[r*D.M+m])),plain2(D.paidAll[r]),plain2(D.total[r]-D.paidAll[r])]));
+    csvDownload("TIRS_Taxpayer_List_"+new Date().toISOString().slice(0,10)+".csv",lines);
+  };
+}
+
+/* =========================================================================
+   Demand notice
+   ========================================================================= */
+function lookupMatches(q){
+  q=q.trim().toLowerCase(); if(!q) return [];
+  const terms=q.split(/\s+/), out=[];
+  for(let r=0;r<D.N&&out.length<8;r++){const h=D.hay[r];if(terms.every(t=>h.indexOf(t)>=0))out.push(r)}
+  return out;
+}
+function bindLookup(input,list){
+  let act=-1, items=[];
+  const draw=()=>{
+    items=lookupMatches(input.value); act=-1;
+    if(!input.value.trim()){list.hidden=true;return}
+    list.hidden=false;
+    list.innerHTML=items.length?items.map((r,i)=>'<li><a href="'+noticeHref(D.id[r])+'" data-i="'+i+'"><b>'+esc(D.name[r])+'</b><small>'+esc(D.id[r])+' · '+esc(D.lgas[D.lga[r]])+' · '+esc(D.cats[D.cat[r]])+'</small></a></li>').join("")
+      :'<li style="padding:10px 12px;color:var(--fg-3);font-weight:600;font-size:14px">No taxpayer matches “'+esc(input.value)+'”. Try the ID number or part of the business name.</li>';
+  };
+  input.addEventListener("input",draw);
+  input.addEventListener("keydown",e=>{
+    const links=list.querySelectorAll("a"); if(!links.length) return;
+    if(e.key==="ArrowDown"){e.preventDefault();act=Math.min(act+1,links.length-1)}
+    else if(e.key==="ArrowUp"){e.preventDefault();act=Math.max(act-1,0)}
+    else if(e.key==="Enter"){e.preventDefault();location.hash=links[Math.max(act,0)].getAttribute("href");return}
+    else if(e.key==="Escape"){list.hidden=true;return}
+    else return;
+    links.forEach((l,i)=>l.classList.toggle("act",i===act));
+  });
+  document.addEventListener("click",e=>{if(!list.contains(e.target)&&e.target!==input) list.hidden=true},{once:false});
+}
+function renderNotice(id){
+  const r=id!=null?D.byId.get(id):undefined;
+  simpleBand("Demand notices","Open the Consolidated Demand Notice for any taxpayer: the full levy breakdown, the payments received each month, and the balance. Print it or save it as PDF.");
+  const lookup='<div class="lookup no-print"><label class="sr-only" for="nq">Find a taxpayer</label><div class="search">'+IC.search+'<input class="input" id="nq" type="search" placeholder="Search by taxpayer ID or business name" autocomplete="off" aria-controls="nlist"></div><ul class="lookup-list" id="nlist" hidden></ul></div>';
+  if(r===undefined){
+    view.innerHTML=sec("Open a notice")+lookup
+      +(id!=null?'<div class="coverage err" style="margin-top:14px;max-width:560px">'+IC.alert+'<span>No taxpayer with the ID “'+esc(id)+'” is in the registry. Search for the business by name instead.</span></div>':"")
+      +'<div class="empty" style="margin-top:22px"><h3>Search for a business to open its notice</h3><p>Type a taxpayer ID such as TR/MSME/2025/00001, or part of the business name. You can also open any notice from the taxpayer registry or the top contributors on the dashboard.</p><a class="btn btn-quiet" href="#/registry">Browse the taxpayer registry'+IC.arrow+'</a></div>';
+    bindLookup(view.querySelector("#nq"),view.querySelector("#nlist"));
+    view.querySelector("#nq").focus();
+    return;
+  }
+  const H=D.H, fees=D.feeHeads;
+  const hv=h=>D.headAmt[r*H+h];
+  let sub=0; for(let h=0;h<fees;h++) sub+=hv(h);
+  let lineSum=sub; for(let h=fees;h<H;h++) lineSum+=hv(h);
+  const total=D.total[r], paid=D.paidAll[r], bal=total-paid;
+  const yrs=[...new Set(D.months.map(m=>m.slice(0,4)))].join(", ");
+  let rows='';
+  for(let h=0;h<fees;h++) rows+='<tr><td>'+(h+1)+'</td><td>'+esc(D.heads[h])+'</td><td class="r">'+nf2.format(hv(h)/100)+'</td></tr>';
+  rows+='<tr class="subtotal"><td></td><td>Sub-total fees</td><td class="r">'+nf2.format(sub/100)+'</td></tr>';
+  for(let h=fees;h<H;h++) rows+='<tr><td>'+(h+1)+'</td><td>'+esc(D.heads[h])+'</td><td class="r">'+nf2.format(hv(h)/100)+'</td></tr>';
+  rows+='<tr class="grand"><td></td><td>Total harmonized assessment</td><td class="r">₦'+nf2.format(total/100)+'</td></tr>';
+  const months=D.months.map((m,i)=>'<div><small>'+esc(monthShort(m)+" "+m.slice(0,4))+'</small><b>'+naira(D.pay[r*D.M+i])+'</b></div>').join("");
+  const phone=D.phone[r]||"Not on record";
+  view.innerHTML=
+    '<div class="notice-bar no-print"><a class="btn btn-quiet btn-sm" href="#/registry">'+IC.back+'Taxpayer registry</a>'
+      +'<div class="actions"><button class="btn btn-quiet" id="ncsv" type="button">'+IC.dl+'Download (CSV)</button><button class="btn btn-primary" id="nprint" type="button">'+IC.print+'Print notice</button></div></div>'
+    +lookup
+    +'<article class="paper" aria-label="Consolidated Demand Notice">'
+      +'<header class="doc-head"><img src="'+document.querySelector(".brand img").src+'" alt="Taraba State coat of arms">'
+        +'<div><div class="gov">Taraba State Government</div><h2>Consolidated Demand Notice</h2><div class="svc">Taraba State Internal Revenue Service · '+esc(yrs)+' harmonized assessment</div></div>'
+        +'<div class="doc-no"><small>Taxpayer ID</small><b>'+esc(D.id[r])+'</b></div></header>'
+      +'<dl class="doc-meta">'
+        +'<div class="wide"><dt>Business name</dt><dd>'+esc(D.name[r])+'</dd></div>'
+        +'<div class="wide"><dt>Business address</dt><dd>'+esc(D.addr[r])+'</dd></div>'
+        +'<div><dt>Local government area</dt><dd>'+esc(D.lgas[D.lga[r]])+'</dd></div>'
+        +'<div><dt>Phone</dt><dd>'+esc(phone)+'</dd></div>'
+        +'<div><dt>Business category</dt><dd>'+esc(D.cats[D.cat[r]])+'</dd></div>'
+        +'<div><dt>Business size · class</dt><dd>'+esc(D.sizes[D.size[r]]+" · "+D.classes[D.cls[r]].replace(/s$/,""))+'</dd></div>'
+      +'</dl>'
+      +'<div class="table-wrap"><table class="doc-table"><thead><tr><th style="width:44px">#</th><th>Revenue head</th><th class="r">Amount (₦)</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'<p class="doc-words">Amount in words: <i>'+esc(amountWords(total))+'</i></p>'
+      +(Math.abs(lineSum-total)>=1?'<p class="doc-note">The revenue heads above add up to '+naira(lineSum)+'. The registry records the total harmonized assessment as '+naira(total)+', which is the amount billed.</p>':"")
+      +'<h3 class="doc-h">Payments received</h3>'
+      +'<div class="months-grid">'+months+'</div>'
+      +'<div class="doc-status"><div><small>Total assessed</small><b>'+naira(total)+'</b></div><div><small>Total paid</small><b>'+naira(paid)+'</b></div>'
+        +'<div class="'+(bal<=0?"ok":"due")+'"><small>Balance</small><b>'+(bal<=0?"₦0.00 · Paid in full":naira(bal)+" outstanding")+'</b></div></div>'
+      +'<footer class="doc-foot"><span>Issued from the Taraba Central Billing and Collections registry ('+esc(D.source)+').</span><span>Printed '+esc(today())+'</span></footer>'
+    +'</article>';
+  bindLookup(view.querySelector("#nq"),view.querySelector("#nlist"));
+  view.querySelector("#nprint").onclick=()=>window.print();
+  view.querySelector("#ncsv").onclick=()=>{
+    const L=[["Consolidated Demand Notice"],["Taxpayer ID",D.id[r]],["Business name",D.name[r]],["Business address",D.addr[r]],["LGA",D.lgas[D.lga[r]]],["Phone",D.phone[r]],["Business category",D.cats[D.cat[r]]],["Business size",D.sizes[D.size[r]]],[],["Revenue head","Amount (NGN)"]];
+    for(let h=0;h<fees;h++) L.push([D.heads[h],plain2(hv(h))]);
+    L.push(["Sub-total fees",plain2(sub)]);
+    for(let h=fees;h<H;h++) L.push([D.heads[h],plain2(hv(h))]);
+    L.push(["Total harmonized assessment",plain2(total)],[],["Month","Paid (NGN)"]);
+    D.months.forEach((m,i)=>L.push([monthLong(m),plain2(D.pay[r*D.M+i])]));
+    L.push(["Total paid",plain2(paid)],["Balance",plain2(bal)]);
+    csvDownload("TIRS_Demand_Notice_"+D.id[r].replace(/\//g,"-")+".csv",L);
+  };
+}
+
+/* =========================================================================
+   Reports
+   ========================================================================= */
+const REPORTS=[
+  {id:"summary",name:"Collections summary",desc:"Amount collected, businesses paying and average payment for each period."},
+  {id:"lga",name:"Collections by LGA",desc:"The 16 local government areas, with registered and paying businesses."},
+  {id:"cat",name:"Collections by business category",desc:"All business categories, ranked by amount collected."},
+  {id:"size",name:"Collections by business size",desc:"Nano, Small and Medium businesses."},
+  {id:"cls",name:"Collections by taxpayer class",desc:"MSMEs and institutions."},
+  {id:"head",name:"Collections by revenue head",desc:"Receipts apportioned to the ten revenue heads by each assessment."},
+  {id:"detail",name:"Taxpayer payment detail",desc:"One row per business with what it paid in each month of the range."},
+];
+function defaultReport(){
+  const a=mKey(D.months[0]), b=mKey(D.months[D.months.length-1]);
+  return {from:isoDay(a.y,a.mo,1),to:isoDay(b.y,b.mo,lastDay(b.y,b.mo)),type:"summary",group:"month",lga:"",cat:"",size:"",cls:""};
+}
+function monthsInRange(from,to){
+  const out=[];
+  D.months.forEach((m,i)=>{const k=mKey(m);const s=isoDay(k.y,k.mo,1),e=isoDay(k.y,k.mo,lastDay(k.y,k.mo));if(s<=to&&e>=from)out.push(i)});
+  return out;
+}
+function validDate(s){return /^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(Date.parse(s))}
+function presets(){
+  const list=[{label:"All periods",from:defaultReport().from,to:defaultReport().to}];
+  D.years.forEach(y=>{
+    list.push({label:String(y),from:isoDay(y,0,1),to:isoDay(y,11,31)});
+    [["Q1",0,2],["Q2",3,5],["Q3",6,8],["Q4",9,11],["H1",0,5],["H2",6,11]].forEach(([n,a,b])=>list.push({label:n+" "+y,from:isoDay(y,a,1),to:isoDay(y,b,lastDay(y,b))}));
+  });
+  return list;
+}
+function periodGroups(mIdx,group){
+  if(group==="whole") return [{label:spanLabel(mIdx),months:mIdx}];
+  if(group==="year"){const ys=[...new Set(mIdx.map(i=>D.months[i].slice(0,4)))];return ys.map(y=>({label:y,months:mIdx.filter(i=>D.months[i].startsWith(y))}))}
+  return mIdx.map(i=>({label:monthShort(D.months[i])+" "+D.months[i].slice(0,4),months:[i]}));
+}
+function reportFilter(p){
+  const lga=p.lga===""?-1:+p.lga, cat=p.cat===""?-1:+p.cat, size=p.size===""?-1:+p.size, cls=p.cls===""?-1:+p.cls;
+  if(lga<0&&cat<0&&size<0&&cls<0) return null;
+  return r=>(lga<0||D.lga[r]===lga)&&(cat<0||D.cat[r]===cat)&&(size<0||D.size[r]===size)&&(cls<0||D.cls[r]===cls);
+}
+function filterDesc(p){
+  const parts=[];
+  if(p.lga!=="") parts.push(D.lgas[+p.lga]+" LGA");
+  if(p.cat!=="") parts.push(D.cats[+p.cat]);
+  if(p.size!=="") parts.push(D.sizes[+p.size]+" businesses");
+  if(p.cls!=="") parts.push(D.classes[+p.cls]);
+  return parts.join(" · ");
+}
+/* Build a report as {title, head, rows, foot, numericCols, previewLimit} of raw values; the table and CSV render from it */
+function buildReport(p,mIdx){
+  const keep=reportFilter(p), groups=periodGroups(mIdx,p.group);
+  const T=aggregate(mIdx,keep);
+  const def=REPORTS.find(x=>x.id===p.type);
+  if(p.type==="summary"){
+    const rows=groups.map(g=>{const A=aggregate(g.months,keep);return [g.label,A.total,A.paying,A.paying?A.total/A.paying:0,T.total?A.total/T.total:0]});
+    return {title:def.name,head:["Period","Collected (₦)","Businesses paying","Average payment (₦)","Share of range"],kinds:["t","m","n","m","p"],rows,
+      foot:["Total",T.total,T.paying,T.paying?T.total/T.paying:0,T.total?1:0]};
+  }
+  if(p.type==="detail"){
+    const cols=groups.map(g=>g.label);
+    const rows=[];
+    for(let r=0;r<D.N;r++){ if(keep&&!keep(r)) continue;
+      const vals=groups.map(g=>g.months.reduce((a,m)=>a+D.pay[r*D.M+m],0));
+      rows.push([D.id[r],D.name[r],D.lgas[D.lga[r]],D.cats[D.cat[r]],D.sizes[D.size[r]],D.total[r],...(groups.length>1?vals:[]),T.per[r]]);
+    }
+    const perCols=groups.length>1?cols:[];
+    const foot=["Total",int(rows.length)+" taxpayers","","","",T.assessed,...(groups.length>1?groups.map((g,j)=>g.months.reduce((a,m)=>a+T.perMonth[mIdx.indexOf(m)],0)):[]),T.total];
+    return {title:def.name,head:["Taxpayer ID","Business name","LGA","Category","Size","Assessment (₦)",...perCols.map(c=>c+" (₦)"),"Collected in range (₦)"],
+      kinds:["t","t","t","t","t","m",...perCols.map(()=>"m"),"m"],rows,foot,previewLimit:100};
+  }
+  const dim={lga:[D.lgas,"lga","LGA"],cat:[D.cats,"cat","Business category"],size:[D.sizes,"size","Business size"],cls:[D.classes,"cls","Taxpayer class"],head:[D.heads,"head","Revenue head"]}[p.type];
+  const [names,key,label]=dim;
+  const multi=groups.length>1;
+  const G=multi?groups.map(g=>aggregate(g.months,keep)):[];
+  let idx=names.map((_,i)=>i);
+  if(p.type!=="size") idx.sort((a,b)=>T[key][b]-T[key][a]);
+  const withCounts=p.type!=="head";
+  const rows=idx.map(i=>[names[i],...(withCounts?[T[key+"Reg"][i],T[key+"N"][i]]:[]),...G.map(A=>A[key][i]),T[key][i],T.total?T[key][i]/T.total:0]);
+  const head=[label,...(withCounts?["Registered","Paying"]:[]),...groups.filter(()=>multi).map(g=>g.label+" (₦)"),"Collected (₦)","Share"];
+  const kinds=["t",...(withCounts?["n","n"]:[]),...G.map(()=>"m"),"m","p"];
+  const foot=["Total",...(withCounts?[T.rows,T.paying]:[]),...G.map(A=>A.total),T.total,T.total?1:0];
+  return {title:def.name,head,kinds,rows,foot,note:p.type==="head"?"Payments are recorded per month, not per revenue head. Each receipt is apportioned in proportion to that business's assessment.":""};
+}
+function cellHtml(v,k){
+  if(k==="m") return naira(v);
+  if(k==="n") return typeof v==="number"?int(v):esc(v);
+  if(k==="p") return (v*100).toFixed(1)+"%";
+  return esc(v);
+}
+function cellCsv(v,k){
+  if(k==="m") return typeof v==="number"?plain2(v):v;
+  if(k==="p") return (v*100).toFixed(2)+"%";
+  return v;
+}
+function renderReports(){
+  if(!state.report) state.report=defaultReport();
+  const p=state.report;
+  simpleBand("Reports and downloads","Choose a date range and a report. Every report downloads as a CSV file that opens in Excel, or prints and saves as PDF.");
+  const pre=presets();
+  const bounds=defaultReport();
+  view.innerHTML=
+    '<div class="print-head"><img src="'+document.querySelector(".brand img").src+'" alt=""><div><b>Taraba Central Billing and Collections</b><span id="phSub"></span></div></div>'
+    +'<div class="no-print">'+sec("Report parameters")
+    +'<div class="params">'
+      +'<div>'
+        +'<div class="daterow"><div class="field"><label for="dfrom">From date</label><input class="input num" type="date" id="dfrom" value="'+p.from+'" min="'+bounds.from+'" max="'+bounds.to+'"></div>'
+        +'<div class="field"><label for="dto">To date</label><input class="input num" type="date" id="dto" value="'+p.to+'" min="'+bounds.from+'" max="'+bounds.to+'"></div></div>'
+        +'<div class="chips" role="group" aria-label="Quick ranges">'+pre.map((x,i)=>'<button type="button" class="chip" data-p="'+i+'" aria-pressed="'+(x.from===p.from&&x.to===p.to)+'">'+esc(x.label)+'</button>').join("")
+          +'<label class="sr-only" for="dmonth">Single month</label><select class="select" id="dmonth" style="height:30px;width:auto;border-radius:999px;font-size:13px;font-weight:700;padding:0 30px 0 12px"><option value="">Single month…</option>'+D.months.map((m,i)=>'<option value="'+i+'">'+esc(monthLong(m))+'</option>').join("")+'</select></div>'
+        +'<div id="cover"></div>'
+        +'<div class="opt-grid">'
+          +'<div class="field"><label for="dgroup">Show collections</label><select class="select" id="dgroup"><option value="month">Month by month</option><option value="year">Year by year</option><option value="whole">As one total for the range</option></select></div>'
+          +'<div class="field"><label for="flga">LGA</label><select class="select" id="flga">'+optionList(D.lgas,p.lga,"All LGAs")+'</select></div>'
+          +'<div class="field"><label for="fcat">Business category</label><select class="select" id="fcat">'+optionList(D.cats,p.cat,"All categories")+'</select></div>'
+          +'<div class="field"><label for="fsize">Business size</label><select class="select" id="fsize">'+optionList(D.sizes,p.size,"All sizes")+'</select></div>'
+          +'<div class="field"><label for="fcls">Taxpayer class</label><select class="select" id="fcls">'+optionList(D.classes,p.cls,"All classes")+'</select></div>'
+        +'</div>'
+      +'</div>'
+      +'<fieldset class="rtypes" style="border:0;padding:0;margin:0"><legend class="flabel" style="font-size:13px;font-weight:700;color:var(--fg-2);margin-bottom:6px;padding:0">Report</legend>'
+        +REPORTS.map(r=>'<label class="rtype"><input type="radio" name="rtype" value="'+r.id+'"'+(p.type===r.id?" checked":"")+'><span><b>'+esc(r.name)+'</b><span>'+esc(r.desc)+'</span></span></label>').join("")
+      +'</fieldset>'
+    +'</div>'
+    +'<div class="report-actions"><button class="btn btn-primary" id="dcsv" type="button">'+IC.dl+'Download CSV</button><button class="btn btn-quiet" id="dprint" type="button">'+IC.print+'Print or save as PDF</button><p id="dsize"></p></div></div>'
+    +sec("Preview")+'<div id="prev" style="margin-top:18px"></div>';
+  view.querySelector("#dgroup").value=p.group;
+  const $=s=>view.querySelector(s);
+  const refresh=()=>drawReport();
+  $("#dfrom").onchange=e=>{p.from=e.target.value;syncChips();refresh()};
+  $("#dto").onchange=e=>{p.to=e.target.value;syncChips();refresh()};
+  view.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{const x=pre[+c.dataset.p];p.from=x.from;p.to=x.to;$("#dfrom").value=p.from;$("#dto").value=p.to;$("#dmonth").value="";syncChips();refresh()});
+  $("#dmonth").onchange=e=>{if(e.target.value==="")return;const k=mKey(D.months[+e.target.value]);p.from=isoDay(k.y,k.mo,1);p.to=isoDay(k.y,k.mo,lastDay(k.y,k.mo));$("#dfrom").value=p.from;$("#dto").value=p.to;syncChips();refresh()};
+  $("#dgroup").onchange=e=>{p.group=e.target.value;refresh()};
+  [["flga","lga"],["fcat","cat"],["fsize","size"],["fcls","cls"]].forEach(([id,k])=>$("#"+id).onchange=e=>{p[k]=e.target.value;refresh()});
+  view.querySelectorAll('input[name="rtype"]').forEach(i=>i.onchange=()=>{p.type=i.value;refresh()});
+  $("#dprint").onclick=()=>window.print();
+  $("#dcsv").onclick=()=>downloadReport();
+  function syncChips(){view.querySelectorAll(".chip").forEach(c=>{const x=pre[+c.dataset.p];c.setAttribute("aria-pressed",String(x.from===p.from&&x.to===p.to))})}
+  drawReport();
+}
+function reportCheck(p){
+  if(!validDate(p.from)||!validDate(p.to)) return {err:"Enter both dates in full to build the report."};
+  if(p.from>p.to) return {err:"The start date ("+dayLong(p.from)+") is after the end date ("+dayLong(p.to)+").",swap:true};
+  const mIdx=monthsInRange(p.from,p.to);
+  if(!mIdx.length) return {err:"No collections are recorded between "+dayLong(p.from)+" and "+dayLong(p.to)+". The registry covers "+spanLabel(D.months.map((_,i)=>i))+"."};
+  return {mIdx};
+}
+function drawReport(){
+  const p=state.report, cover=view.querySelector("#cover"), prev=view.querySelector("#prev"), chk=reportCheck(p);
+  const csvBtn=view.querySelector("#dcsv"), prBtn=view.querySelector("#dprint");
+  view.querySelector("#dfrom").setAttribute("aria-invalid",String(!!chk.err));
+  view.querySelector("#dto").setAttribute("aria-invalid",String(!!chk.err));
+  if(chk.err){
+    cover.innerHTML='<div class="coverage err" role="alert">'+IC.alert+'<span>'+esc(chk.err)+(chk.swap?' <button class="linkish" id="dswap" type="button">Swap the dates</button>':'')+'</span></div>';
+    if(chk.swap) cover.querySelector("#dswap").onclick=()=>{[p.from,p.to]=[p.to,p.from];renderReports()};
+    prev.innerHTML='<div class="empty"><h3>No preview yet</h3><p>Fix the date range above and the report will appear here.</p></div>';
+    csvBtn.disabled=prBtn.disabled=true; view.querySelector("#dsize").textContent="";
+    return;
+  }
+  csvBtn.disabled=prBtn.disabled=false;
+  const mIdx=chk.mIdx, r=rangeOf(mIdx);
+  const snapped=r.from!==p.from||r.to!==p.to;
+  cover.innerHTML='<div class="coverage">'+IC.info+'<span>Covers '+esc(dayLong(p.from))+' to '+esc(dayLong(p.to))+': '+mIdx.length+' '+(mIdx.length===1?"month":"months")+' of collections ('+esc(spanLabel(mIdx))+').'+(snapped?' Collections are recorded monthly, so the report includes every month the range touches.':'')+'</span></div>';
+  const R=buildReport(p,mIdx);
+  const fd=filterDesc(p);
+  const sub=R.title+" · "+dayLong(p.from)+" to "+dayLong(p.to)+(fd?" · "+fd:"");
+  const ph=view.querySelector("#phSub"); if(ph) ph.textContent=sub;
+  const lim=R.previewLimit||Infinity, shown=R.rows.slice(0,lim);
+  prev.innerHTML='<div class="preview-title"><h3>'+esc(R.title)+'</h3><p>'+esc(dayLong(p.from)+" to "+dayLong(p.to)+(fd?" · "+fd:""))+'</p></div>'
+    +(R.rows.length?'<div class="table-wrap"><table><thead><tr>'+R.head.map((h,i)=>'<th'+(R.kinds[i]!=="t"?' class="r"':"")+'>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'
+    +shown.map(row=>'<tr>'+row.map((v,i)=>'<td class="'+(R.kinds[i]!=="t"?"r":"")+(i===0?" strong":"")+'">'+cellHtml(v,R.kinds[i])+'</td>').join("")+'</tr>').join("")
+    +'</tbody><tfoot><tr>'+R.foot.map((v,i)=>'<td class="'+(R.kinds[i]!=="t"?"r":"")+'">'+(v===""?"":cellHtml(v,R.kinds[i]))+'</td>').join("")+'</tr></tfoot></table></div>'
+    :'<div class="empty"><h3>No businesses match these filters</h3><p>Widen the LGA, category, size or class filters to include more taxpayers.</p></div>')
+    +(R.rows.length>lim?'<p class="note">Showing the first '+int(lim)+' of '+int(R.rows.length)+' rows. The download contains every row.</p>':"")
+    +(R.note?'<p class="note">'+esc(R.note)+'</p>':"");
+  view.querySelector("#dsize").textContent=int(R.rows.length)+" "+(R.rows.length===1?"row":"rows")+" in the download";
+}
+function downloadReport(){
+  const p=state.report, chk=reportCheck(p); if(chk.err) return;
+  const R=buildReport(p,chk.mIdx), fd=filterDesc(p);
+  const lines=[["Taraba Central Billing and Collections: "+R.title],["Period: "+dayLong(p.from)+" to "+dayLong(p.to)+" ("+spanLabel(chk.mIdx)+")"]];
+  if(fd) lines.push(["Filters: "+fd]);
+  lines.push(["Generated "+today()+" from "+D.source]);
+  if(R.note) lines.push([R.note]);
+  lines.push([],R.head.map(h=>h.replace("(₦)","(NGN)")));
+  R.rows.forEach(row=>lines.push(row.map((v,i)=>cellCsv(v,R.kinds[i]))));
+  lines.push(R.foot.map((v,i)=>v===""?"":cellCsv(v,R.kinds[i])));
+  const slug=R.title.replace(/[^A-Za-z]+/g,"_").replace(/_$/,"");
+  csvDownload("TIRS_"+slug+"_"+p.from+"_to_"+p.to+".csv",lines);
+}
+
+/* =========================================================================
+   Router + shell
+   ========================================================================= */
+const app=document.getElementById("app"), menuBtn=document.getElementById("menuBtn");
+function closeMenu(){app.classList.remove("menu-open");menuBtn.setAttribute("aria-expanded","false")}
+menuBtn.onclick=()=>{const o=!app.classList.contains("menu-open");app.classList.toggle("menu-open",o);menuBtn.setAttribute("aria-expanded",String(o))};
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenu()});
+document.getElementById("side").addEventListener("click",e=>{if(e.target.closest("a"))closeMenu()});
+
+function route(){
+  if(!D) return;
+  hideTip();
+  const h=location.hash.replace(/^#\/?/,""), [name,...rest]=h.split("/");
+  const r=["dashboard","registry","notice","reports"].includes(name)?name:"dashboard";
+  document.querySelectorAll(".nav-link[data-route]").forEach(a=>{if(a.dataset.route===r)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  const titles={dashboard:"Collections dashboard",registry:"Taxpayer registry",notice:"Demand notices",reports:"Reports and downloads"};
+  document.title=titles[r]+" · Taraba Central Billing and Collections";
+  if(r==="dashboard") renderDashboard();
+  else if(r==="registry") renderRegistry();
+  else if(r==="notice") renderNotice(rest.length?decodeURIComponent(rest.join("/")):null);
+  else renderReports();
+  if(r!=="dashboard"||route.last!=="dashboard") window.scrollTo(0,0);
+  route.last=r;
+}
+window.addEventListener("hashchange",route);
+
+loadData().then(d=>{
+  D=d;
+  state.scope={kind:"year",year:D.years[D.years.length-1]};
+  document.getElementById("sourceNote").innerHTML='Data: <b>'+esc(D.source)+'</b>, '+int(D.N)+' records, '+esc(spanLabel(D.months.map((_,i)=>i)))+'. Built '+esc(dayLong(D.built))+'.';
+  route();
+}).catch(err=>{
+  const old=err&&err.message==="old-browser";
+  band.className="band-body simple";
+  band.innerHTML='<h1>Taraba Central Billing and Collections</h1>';
+  view.innerHTML='<div class="fatal" role="alert"><h2>'+(old?"This browser cannot open the billing registry":"The billing registry could not be opened")+'</h2><p>'
+    +(old?"Open this file in a current version of Microsoft Edge, Google Chrome or Mozilla Firefox. The file works offline; nothing needs installing.":"The data inside this file may be damaged. Rebuild it by running build.py next to the billing workbook, then open the new taraba-billing.html.")+'</p></div>';
+  console.error(err);
+});
+})();
+</script>
+</body>
+</html>
