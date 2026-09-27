@@ -25,6 +25,7 @@ DEFAULT_WORKBOOK = ROOT / "TIRS_ CDN BILLING_2025 (1).xlsx"
 TEMPLATE = ROOT / "src" / "template.html"
 OUTPUT = ROOT / "taraba-billing.html"
 SEAL = ROOT / "Taraba_State_Coat_of_Arms.png"
+JSPDF = ROOT / "assets" / "jspdf.umd.min.js"  # PDF export library, inlined so it works offline
 FONTS = {"__FONT_LATIN__": ROOT / "assets" / "nunito-latin.woff2",
          "__FONT_LATIN_EXT__": ROOT / "assets" / "nunito-latin-ext.woff2"}
 
@@ -148,6 +149,7 @@ def main():
     html = html.replace("__SEAL__", base64.b64encode(SEAL.read_bytes()).decode("ascii"))
     for token, path in FONTS.items():
         html = html.replace(token, base64.b64encode(path.read_bytes()).decode("ascii"))
+    html = html.replace("__JSPDF__", JSPDF.read_text(encoding="utf-8"))
     OUTPUT.write_text(html, encoding="utf-8")
 
     paid = sum(data["cols"]["pay"]) / 100

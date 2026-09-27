@@ -140,8 +140,6 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .nav-link:hover svg{color:var(--fg)}
 .nav-link[aria-current="page"]{background:var(--card);color:var(--fg);box-shadow:var(--shadow-outline)}
 .nav-link[aria-current="page"] svg{color:var(--primary)}
-.side-note{padding:4px 12px;font-size:13px;line-height:1.5;color:var(--fg-3)}
-.side-note b{color:var(--fg-2);font-weight:700}
 
 .sheet{flex:1;min-width:0;margin-top:-72px;background:var(--card);border-radius:var(--radius-lg);box-shadow:var(--shadow-outline);padding:8px 32px 36px;position:relative}
 
@@ -413,6 +411,9 @@ td .sub .pill{margin-top:3px;padding:1px 8px 1px 6px}
 /* ---------- print ---------- */
 @media print{
   @page{size:A4;margin:14mm}
+  @page wide{size:A4 landscape;margin:10mm}
+  body[data-route="reports"] #view{page:wide}
+  tfoot{display:table-row-group}
   body{background:#fff;font-size:12.5px}
   .band,.side,.no-print,#tip{display:none!important}
   .shell{display:block;padding:0;max-width:none}
@@ -471,11 +472,6 @@ td .sub .pill{margin-top:3px;padding:1px 8px 1px 6px}
           <h3>Reporting</h3>
           <a class="nav-link" href="#/reports" data-route="reports"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>Reports and downloads</a>
         </section>
-        <section>
-          <h3>Resources</h3>
-          <a class="nav-link" href="https://www.govpayhub.com/" target="_blank" rel="noopener"><svg class="i" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>GovPayHub public portal</a>
-          <p class="side-note" id="sourceNote"></p>
-        </section>
       </div>
     </nav>
 
@@ -492,6 +488,8 @@ td .sub .pill{margin-top:3px;padding:1px 8px 1px 6px}
 <div id="tip" role="tooltip" aria-hidden="true"></div>
 
 <script id="data" type="application/octet-stream">__DATA_GZ_B64__</script>
+<script>/* jsPDF 2.5.2, MIT licence, https://github.com/parallax/jsPDF */
+__JSPDF__</script>
 <script>
 "use strict";
 (function(){
@@ -1114,7 +1112,7 @@ function cellCsv(v,k){
 function renderReports(){
   if(!state.report) state.report=defaultReport();
   const p=state.report;
-  simpleBand("Reports and downloads","Choose a date range and a report. Every report downloads as a CSV file that opens in Excel, or prints and saves as PDF.");
+  simpleBand("Reports and downloads","Choose a date range and a report. Every report downloads in full, as a CSV file that opens in Excel or as a PDF.");
   const pre=presets();
   const bounds=defaultReport();
   view.innerHTML=
@@ -1139,7 +1137,7 @@ function renderReports(){
         +REPORTS.map(r=>'<label class="rtype"><input type="radio" name="rtype" value="'+r.id+'"'+(p.type===r.id?" checked":"")+'><span><b>'+esc(r.name)+'</b><span>'+esc(r.desc)+'</span></span></label>').join("")
       +'</fieldset>'
     +'</div>'
-    +'<div class="report-actions"><button class="btn btn-primary" id="dcsv" type="button">'+IC.dl+'Download CSV</button><button class="btn btn-quiet" id="dprint" type="button">'+IC.print+'Print or save as PDF</button><p id="dsize"></p></div></div>'
+    +'<div class="report-actions"><button class="btn btn-primary" id="dcsv" type="button">'+IC.dl+'Download CSV</button><button class="btn btn-quiet" id="dpdf" type="button">'+IC.dl+'Download PDF</button><p id="dsize"></p></div></div>'
     +sec("Preview")+'<div id="prev" style="margin-top:18px"></div>';
   view.querySelector("#dgroup").value=p.group;
   const $=s=>view.querySelector(s);
@@ -1151,7 +1149,7 @@ function renderReports(){
   $("#dgroup").onchange=e=>{p.group=e.target.value;refresh()};
   [["flga","lga"],["fcat","cat"],["fsize","size"],["fcls","cls"]].forEach(([id,k])=>$("#"+id).onchange=e=>{p[k]=e.target.value;refresh()});
   view.querySelectorAll('input[name="rtype"]').forEach(i=>i.onchange=()=>{p.type=i.value;refresh()});
-  $("#dprint").onclick=()=>window.print();
+  $("#dpdf").onclick=()=>pdfReport();
   $("#dcsv").onclick=()=>downloadReport();
   function syncChips(){view.querySelectorAll(".chip").forEach(c=>{const x=pre[+c.dataset.p];c.setAttribute("aria-pressed",String(x.from===p.from&&x.to===p.to))})}
   drawReport();
@@ -1165,7 +1163,7 @@ function reportCheck(p){
 }
 function drawReport(){
   const p=state.report, cover=view.querySelector("#cover"), prev=view.querySelector("#prev"), chk=reportCheck(p);
-  const csvBtn=view.querySelector("#dcsv"), prBtn=view.querySelector("#dprint");
+  const csvBtn=view.querySelector("#dcsv"), prBtn=view.querySelector("#dpdf");
   view.querySelector("#dfrom").setAttribute("aria-invalid",String(!!chk.err));
   view.querySelector("#dto").setAttribute("aria-invalid",String(!!chk.err));
   if(chk.err){
@@ -1185,13 +1183,168 @@ function drawReport(){
   const ph=view.querySelector("#phSub"); if(ph) ph.textContent=sub;
   const lim=R.previewLimit||Infinity, shown=R.rows.slice(0,lim);
   prev.innerHTML='<div class="preview-title"><h3>'+esc(R.title)+'</h3><p>'+esc(dayLong(p.from)+" to "+dayLong(p.to)+(fd?" · "+fd:""))+'</p></div>'
-    +(R.rows.length?'<div class="table-wrap"><table><thead><tr>'+R.head.map((h,i)=>'<th'+(R.kinds[i]!=="t"?' class="r"':"")+'>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'
-    +shown.map(row=>'<tr>'+row.map((v,i)=>'<td class="'+(R.kinds[i]!=="t"?"r":"")+(i===0?" strong":"")+'">'+cellHtml(v,R.kinds[i])+'</td>').join("")+'</tr>').join("")
-    +'</tbody><tfoot><tr>'+R.foot.map((v,i)=>'<td class="'+(R.kinds[i]!=="t"?"r":"")+'">'+(v===""?"":cellHtml(v,R.kinds[i]))+'</td>').join("")+'</tr></tfoot></table></div>'
+    +(R.rows.length?reportTable(R,shown)
     :'<div class="empty"><h3>No businesses match these filters</h3><p>Widen the LGA, category, size or class filters to include more taxpayers.</p></div>')
-    +(R.rows.length>lim?'<p class="note">Showing the first '+int(lim)+' of '+int(R.rows.length)+' rows. The download contains every row.</p>':"")
+    +(R.rows.length>lim?'<p class="note no-print">Showing the first '+int(lim)+' of '+int(R.rows.length)+' rows. The CSV download and the PDF contain every row.</p>':"")
     +(R.note?'<p class="note">'+esc(R.note)+'</p>':"");
-  view.querySelector("#dsize").textContent=int(R.rows.length)+" "+(R.rows.length===1?"row":"rows")+" in the download";
+  view.querySelector("#dsize").textContent=int(R.rows.length)+" "+(R.rows.length===1?"row":"rows")+" in the download and the PDF";
+}
+function reportTable(R,rows){
+  const cls=i=>(R.kinds[i]!=="t"?"r":"");
+  const out=['<div class="table-wrap"><table><thead><tr>'+R.head.map((h,i)=>'<th class="'+cls(i)+'">'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'];
+  for(const row of rows){
+    let tr='<tr>';
+    for(let i=0;i<row.length;i++) tr+='<td class="'+cls(i)+(i===0?" strong":"")+'">'+cellHtml(row[i],R.kinds[i])+'</td>';
+    out.push(tr+'</tr>');
+  }
+  out.push('</tbody><tfoot><tr>'+R.foot.map((v,i)=>'<td class="'+cls(i)+'">'+(v===""?"":cellHtml(v,R.kinds[i]))+'</td>').join("")+'</tr></tfoot></table></div>');
+  return out.join("");
+}
+/* =========================================================================
+   PDF export: drawn directly with jsPDF, so every row is included
+   (the browser's print engine cannot paginate tens of thousands of rows)
+   ========================================================================= */
+const pdfSafe=s=>String(s).replace(/₦/g,"NGN ").replace(/[–—−]/g,"-").replace(/…/g,"...").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[^\x00-\xFF]/g,"?");
+function pdfCell(v,k){
+  if(k==="m") return typeof v==="number"?nf2.format(v/100):String(v);
+  if(k==="n") return typeof v==="number"?int(v):String(v);
+  if(k==="p") return (v*100).toFixed(1)+"%";
+  return pdfSafe(v);
+}
+function makePdf(R,p,mIdx){
+  const {jsPDF}=window.jspdf;
+  // wide reports (e.g. taxpayer detail month by month, 19 columns) go on A3 so names stay readable
+  const doc=new jsPDF({orientation:"landscape",unit:"pt",format:R.head.length>12?"a3":"a4",compress:true});
+  const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight(), M=30, avail=W-2*M, PAD=4;
+  const BAND=[11,61,46], INK=[23,23,23], MUTED=[107,106,103], ZEBRA=[244,247,245];
+  const head=R.head.map(h=>pdfSafe(h.replace("(₦)","(NGN)")));
+  const n=head.length, isNum=R.kinds.map(k=>k!=="t");
+  const fixed=isNum.map((x,i)=>x||i===0); // amounts and the first column (taxpayer ID or row label) always print in full
+  const cells=R.rows.map(r=>r.map((v,i)=>pdfCell(v,R.kinds[i])));
+  const foot=R.foot.map((v,i)=>v===""?"":pdfCell(v,R.kinds[i]));
+
+  /* column widths: measure the widest value; shrink the font until the numbers fit */
+  let fs=7.5, widths;
+  for(const size of [7.5,7,6.5,6,5.5,5]){
+    fs=size; doc.setFontSize(fs);
+    const natural=head.map((h,i)=>{
+      let longest=foot[i]; for(const r of cells){ if(r[i].length>longest.length) longest=r[i]; }
+      doc.setFont("helvetica","bold"); const hw=Math.max(...h.split(" ").map(w=>doc.getTextWidth(w)));
+      doc.setFont("helvetica",i===0?"bold":"normal");
+      return Math.max(hw,doc.getTextWidth(longest))+PAD*2;
+    });
+    const fixedW=natural.reduce((a,w,i)=>a+(fixed[i]?w:0),0);
+    const textMin=head.reduce((a,_,i)=>a+(fixed[i]?0:Math.min(natural[i],i===1?80:40)),0);
+    widths=natural;
+    if(fixedW+textMin<=avail||size===5){
+      const total=natural.reduce((a,b)=>a+b,0);
+      if(total<=avail){ widths=natural.map(w=>w*avail/total); }
+      else{
+        // only the descriptive columns give way: trim the widest ones down to a shared cap,
+        // so short columns (LGA, size) keep their natural width
+        const room=Math.max(0,avail-fixedW), tw=natural.filter((_,i)=>!fixed[i]).sort((a,b)=>a-b);
+        let cap=room/tw.length, used=0;
+        for(let k=0;k<tw.length;k++){ const c=(room-used)/(tw.length-k); if(tw[k]<=c){used+=tw[k]} else {cap=c;break} }
+        widths=natural.map((w,i)=>fixed[i]?w:Math.min(w,cap));
+      }
+      break;
+    }
+  }
+  const fit=(s,w)=>{
+    if(doc.getTextWidth(s)<=w) return s;
+    let lo=0,hi=s.length;
+    while(lo<hi){const mid=(lo+hi+1)>>1; if(doc.getTextWidth(s.slice(0,mid)+"...")<=w) lo=mid; else hi=mid-1;}
+    return s.slice(0,lo)+"...";
+  };
+  const xs=[]; widths.reduce((x,w)=>{xs.push(x);return x+w},M);
+  const RH=fs*1.55, fd=filterDesc(p);
+  const period=dayLong(p.from)+" to "+dayLong(p.to)+" ("+spanLabel(mIdx)+")";
+  const seal=document.querySelector(".brand img").src;
+
+  function tableHead(y){
+    doc.setFont("helvetica","bold"); doc.setFontSize(fs);
+    const lines=head.map((h,i)=>doc.splitTextToSize(h,widths[i]-PAD*2).slice(0,3));
+    const hh=Math.max(...lines.map(l=>l.length))*fs*1.2+8;
+    doc.setFillColor(...BAND); doc.rect(M,y,avail,hh,"F");
+    doc.setTextColor(255,255,255);
+    lines.forEach((l,i)=>l.forEach((t,j)=>{
+      if(isNum[i]) doc.text(t,xs[i]+widths[i]-PAD,y+5+fs+j*fs*1.2,{align:"right"});
+      else doc.text(t,xs[i]+PAD,y+5+fs+j*fs*1.2);
+    }));
+    return y+hh;
+  }
+  function pageTop(first){
+    if(first){
+      doc.addImage(seal,"PNG",M,M-6,38,38);
+      doc.setTextColor(...INK); doc.setFont("helvetica","bold"); doc.setFontSize(13);
+      doc.text("Taraba Central Billing and Collections",M+48,M+6);
+      doc.setFontSize(10.5); doc.text(pdfSafe(R.title),M+48,M+21);
+      doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...MUTED);
+      doc.text(pdfSafe("Period: "+period+(fd?"   |   "+fd:"")),M+48,M+33);
+      return tableHead(M+44);
+    }
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+    doc.text(pdfSafe("Taraba Central Billing and Collections  |  "+R.title+"  |  "+period),M,M-2);
+    return tableHead(M+6);
+  }
+  function row(r,y,bold){
+    doc.setFont("helvetica",bold?"bold":"normal"); doc.setTextColor(...INK);
+    for(let i=0;i<n;i++){
+      const s=r[i]; if(!s) continue;
+      if(isNum[i]) doc.text(s,xs[i]+widths[i]-PAD,y+RH-fs*0.45,{align:"right"});
+      else{
+        if(i===0&&!bold) doc.setFont("helvetica","bold");
+        doc.text(fit(s,widths[i]-PAD*2),xs[i]+PAD,y+RH-fs*0.45);
+        if(i===0&&!bold) doc.setFont("helvetica","normal");
+      }
+    }
+  }
+
+  const bottom=H-M-12;
+  let y=pageTop(true);
+  doc.setFontSize(fs);
+  for(let j=0;j<cells.length;j++){
+    if(y+RH>bottom){doc.addPage(); y=pageTop(false); doc.setFontSize(fs);}
+    if(j%2){doc.setFillColor(...ZEBRA); doc.rect(M,y,avail,RH,"F");}
+    row(cells[j],y,false); y+=RH;
+  }
+  if(y+RH+2>bottom){doc.addPage(); y=pageTop(false); doc.setFontSize(fs);}
+  doc.setDrawColor(...BAND); doc.setLineWidth(1); doc.line(M,y,M+avail,y);
+  doc.setFillColor(233,243,237); doc.rect(M,y+0.5,avail,RH+2,"F");
+  row(foot,y+1,true); y+=RH+2;
+  if(R.note){
+    doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+    const lines=doc.splitTextToSize(pdfSafe(R.note),avail);
+    if(y+14+lines.length*10>bottom){doc.addPage(); y=M;}
+    doc.text(lines,M,y+14);
+  }
+  const pages=doc.getNumberOfPages(), stamp=pdfSafe("Generated "+today()+" from "+D.source);
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i); doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...MUTED);
+    doc.text(stamp,M,H-M+4);
+    doc.text("Page "+i+" of "+pages,W-M,H-M+4,{align:"right"});
+  }
+  return doc;
+}
+function pdfReport(){
+  const p=state.report, chk=reportCheck(p); if(chk.err) return;
+  const btn=view.querySelector("#dpdf"), note=view.querySelector("#dsize"), label=btn.innerHTML;
+  if(!window.jspdf){note.textContent="The PDF tool is missing from this file. Rebuild it with build.py, or download the CSV instead.";return}
+  const R=buildReport(p,chk.mIdx);
+  if(!R.rows.length) return;
+  btn.disabled=true; btn.innerHTML=IC.dl+"Building PDF…";
+  note.textContent="Building a PDF of all "+int(R.rows.length)+" rows. Large reports take a few seconds.";
+  setTimeout(()=>{
+    try{
+      const doc=makePdf(R,p,chk.mIdx);
+      const slug=R.title.replace(/[^A-Za-z]+/g,"_").replace(/_$/,"");
+      doc.save("TIRS_"+slug+"_"+p.from+"_to_"+p.to+".pdf");
+      note.textContent="PDF downloaded: "+int(R.rows.length)+" rows on "+int(doc.getNumberOfPages())+(doc.getNumberOfPages()===1?" page.":" pages.");
+    }catch(e){
+      console.error(e);
+      note.textContent="The PDF could not be created ("+e.message+"). Download the CSV instead.";
+    }finally{btn.disabled=false; btn.innerHTML=label}
+  },40);
 }
 function downloadReport(){
   const p=state.report, chk=reportCheck(p); if(chk.err) return;
@@ -1222,6 +1375,7 @@ function route(){
   const h=location.hash.replace(/^#\/?/,""), [name,...rest]=h.split("/");
   const r=["dashboard","registry","notice","reports"].includes(name)?name:"dashboard";
   document.querySelectorAll(".nav-link[data-route]").forEach(a=>{if(a.dataset.route===r)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  document.body.dataset.route=r;
   const titles={dashboard:"Collections dashboard",registry:"Taxpayer registry",notice:"Demand notices",reports:"Reports and downloads"};
   document.title=titles[r]+" · Taraba Central Billing and Collections";
   if(r==="dashboard") renderDashboard();
@@ -1236,7 +1390,6 @@ window.addEventListener("hashchange",route);
 loadData().then(d=>{
   D=d;
   state.scope={kind:"year",year:D.years[D.years.length-1]};
-  document.getElementById("sourceNote").innerHTML='Data: <b>'+esc(D.source)+'</b>, '+int(D.N)+' records, '+esc(spanLabel(D.months.map((_,i)=>i)))+'. Built '+esc(dayLong(D.built))+'.';
   route();
 }).catch(err=>{
   const old=err&&err.message==="old-browser";

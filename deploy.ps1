@@ -109,16 +109,16 @@ $useGlobal = [bool](Get-Command netlify -ErrorAction SilentlyContinue)
 if (-not $useGlobal -and -not (Get-Command npx -ErrorAction SilentlyContinue)) {
     Fail 'Neither the Netlify CLI nor npx was found. Install Node.js from https://nodejs.org, or run: npm install -g netlify-cli'
 }
-function Invoke-Netlify {
-    if ($useGlobal) { & netlify @args } else { & npx --yes netlify-cli @args }
-}
+# Call the executable directly with an argument array: PowerShell passes each
+# element verbatim to native programs (a wrapper function would swallow "--" flags).
+if ($useGlobal) { $cliExe = 'netlify'; $cliPrefix = @() } else { $cliExe = 'npx'; $cliPrefix = @('--yes', 'netlify-cli') }
 Write-Host ('    Using ' + $(if ($useGlobal) { 'the installed netlify command' } else { 'npx netlify-cli (downloaded on first use)' }))
 
 if (-not $env:NETLIFY_AUTH_TOKEN) {
-    $status = (Invoke-Netlify status 2>&1 | Out-String)
+    $status = (& $cliExe @($cliPrefix + @('status')) 2>&1 | Out-String)
     if ($status -match 'Not logged in') {
         Step 'Logging in to Netlify (a browser window will open)'
-        Invoke-Netlify login
+        & $cliExe @($cliPrefix + @('login'))
         if ($LASTEXITCODE -ne 0) { Fail 'Netlify login did not complete.' }
     }
 }
@@ -126,6 +126,9 @@ if (-not $env:NETLIFY_AUTH_TOKEN) {
 # ---------------------------------------------------------------------------
 # 4. Deploy
 # ---------------------------------------------------------------------------
+if (-not $Site -and -not (Test-Path (Join-Path $root '.netlify\state.json'))) {
+    Fail 'No Netlify site is linked to this folder. Run: npx netlify-cli link   (or pass -Site <site-id>)'
+}
 if ($Prod -and -not $Yes) {
     Write-Host "`nThis publishes all taxpayer records (names, addresses, phone numbers) to the live site." -ForegroundColor Yellow
     Write-Host 'Make sure password protection is switched on for this site in Netlify first.' -ForegroundColor Yellow
@@ -136,20 +139,31 @@ if ($Prod -and -not $Yes) {
 if (-not $Message) {
     $Message = 'Taraba Central Billing and Collections ' + (Get-Date -Format 'yyyy-MM-dd HH:mm')
 }
-$deployArgs = @('deploy', '--dir', $dist, '--message', $Message)
+$deployArgs = @('deploy', '--dir', $dist, '--message', $Message, '--json')
 if ($Site) { $deployArgs += @('--site', $Site) }
 if ($Prod) { $deployArgs += '--prod' }
 
 Step $(if ($Prod) { 'Deploying to production' } else { 'Creating a draft deploy (preview URL)' })
-if (-not $Site -and -not (Test-Path (Join-Path $root '.netlify\state.json'))) {
-    Write-Host '    No site linked yet: Netlify will ask you to link an existing site or create a new one.'
+Write-Host '    Uploading... (a 5 MB page takes a moment)'
+$raw = (& $cliExe @($cliPrefix + $deployArgs) 2>&1 | Out-String)
+$code = $LASTEXITCODE
+
+# Success only counts when Netlify returns a deploy record with a URL
+$result = $null
+$first = $raw.IndexOf('{'); $last = $raw.LastIndexOf('}')
+if ($first -ge 0 -and $last -gt $first) {
+    try { $result = $raw.Substring($first, $last - $first + 1) | ConvertFrom-Json } catch { $result = $null }
 }
-Invoke-Netlify @deployArgs
-if ($LASTEXITCODE -ne 0) { Fail 'The Netlify deploy failed. See the message above.' }
+if ($code -ne 0 -or -not $result -or -not $result.deploy_url) {
+    Write-Host $raw
+    Fail 'The Netlify deploy did not complete. See the output above.'
+}
 
 Write-Host ''
 if ($Prod) {
-    Write-Host 'Done. The live site is updated.' -ForegroundColor Green
+    Write-Host "Done. The live site is updated: $($result.url)" -ForegroundColor Green
 } else {
-    Write-Host 'Done. Open the "Website draft URL" above to check it, then run .\deploy.ps1 -Prod to publish.' -ForegroundColor Green
+    Write-Host "Done. Draft deploy (preview): $($result.deploy_url)" -ForegroundColor Green
+    Write-Host 'Check it, then run .\deploy.cmd -Prod to publish it to the main address.'
 }
+if ($result.logs) { Write-Host "Deploy log: $($result.logs)" }
