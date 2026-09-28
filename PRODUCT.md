@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Single self-contained offline HTML file (user's choice). The 39,981 registry records are embedded at build time by a Python build script (`build.py`) that reads the single combined registry workbook; re-running the script regenerates the file when new data arrives. No server, no install, no network dependency at runtime.
+Single self-contained offline HTML file (user's choice). The 39,981 registry records are embedded at build time by a Python build script (`build.py`) that reads the single consolidated registry workbook; re-running the script regenerates the file when new data arrives. No server, no install, no network dependency at runtime.
 
 ## Users
 
@@ -24,11 +24,11 @@ It works from the state's own Consolidated Demand Notice (CDN) billing registry,
 
 ## Operating Context
 
-- Source data: **one spreadsheet only** (user requirement): `Taraba_Combined_Registry_2025.xlsx`, sheet "Combined Registry", 39,981 rows (34,981 MSMEs, 5,000 institutions; IDs `TR/MSME/2025/00001`, `TR/INST/2025/00001`). Earlier source files are kept in `archive/` and are not used.
-- Columns (33): MSME Registration ID, Entity Type (MSME / Institution), Business Name, Business Category (11), LGA (16), Business Address, Phone Number (institutions only, stored as numbers), Business Size (Nano / Small / Medium), seven fee lines, Sub-Total Fees, Licences, Rent on Government Property, Rent on Land, Total Harmonized Assessment, Jan-2025 to Dec-2025, Total Billed 2025. Sub-Total, Total and Total Billed are live formulas in the sheet.
-- Monthly columns are **payments collected** that month (re-confirmed by the user for this file, despite the "Total Billed 2025" header, which is the sum of the months). For 2,600 rows the monthly total differs from the assessment by 1 to 3 kobo because of rounding in the sheet; such accounts are treated as paid in full and the notice says why.
+- Source data: **one spreadsheet only** (user requirement): `Taraba State_Consolidated Revenue Collections Report_2025.xlsx` (the latest cleaned dataset), sheet "Master Registry", 39,981 rows (34,981 MSMEs, 5,000 institutions; IDs `TR/MSME/2025/00001`, `TR/INST/2025/00001`). Earlier source files are kept in `archive/` and are not used.
+- Columns (36): MSME Registration ID, Entity Type (MSME / Institution), Business Name, Business Category (11), LGA (16), Business Address, Phone Number (institutions only, stored as numbers), Business Size (Nano / Small / Medium), seven fee lines, Sub-Total Fees, Licences, Fines, Sales, Earnings, Rent on Government Property, Rent on Land, Total Harmonized Assessment, Jan-2025 to Dec-2025, Total Billed 2025. Values only (no formulas). Revenue heads are read from the sheet, so heads can be added or dropped without code changes.
+- Monthly columns are **payments collected** that month (re-confirmed by the user for this file, despite the "Total Billed 2025" header, which is the sum of the months). In this dataset every row reconciles exactly: sub-total, assessment and monthly collections agree to the kobo.
 - Collections are recorded per month, not per day; date-range reports resolve to whole months.
-- The statutory breakdown is one report, not split: the whole Combined Registry sheet regenerated in its own design (sheet name, headers, column order, Arial, #1F4E78 header, widths, frozen header row, number formats, live formulas), all read by `build.py` from the workbook itself.
+- The statutory breakdown is one report, not split: the whole registry sheet regenerated in its own design (sheet name, headers, column order, fonts, fills, widths, frozen panes, number formats and any formulas), all read by `build.py` from the workbook itself.
 - Exported documents never show the source file name; they carry "Generated <date> · Taraba State Internal Revenue Service".
 - Payments are not split by revenue head in the source. Any revenue-head view of a period apportions receipts in proportion to each business's assessment and must say so.
 
@@ -50,7 +50,7 @@ It works from the state's own Consolidated Demand Notice (CDN) billing registry,
 
 ## Evidence on Hand
 
-- The 2025 combined registry workbook (39,981 businesses; ₦9,605,015,127.94 assessed, ₦9,605,015,128.02 collected).
+- The 2025 consolidated revenue collections workbook (39,981 businesses; ₦8,528,514,150.77 assessed and collected).
 - Coat of arms image.
 - No outstanding balances, arrears, payment dates, receipt numbers, or payment channels exist in the data; none may be invented.
 

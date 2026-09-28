@@ -24,7 +24,7 @@ from pathlib import Path
 import openpyxl
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_WORKBOOK = ROOT / "Taraba_Combined_Registry_2025.xlsx"
+DEFAULT_WORKBOOK = ROOT / "Taraba State_Consolidated Revenue Collections Report_2025.xlsx"
 TEMPLATE = ROOT / "src" / "template.html"
 OUTPUT = ROOT / "taraba-billing.html"
 SEAL = ROOT / "Taraba_State_Coat_of_Arms.png"
@@ -32,9 +32,10 @@ JSPDF = ROOT / "assets" / "jspdf.umd.min.js"  # PDF export library, inlined so i
 FONTS = {"__FONT_LATIN__": ROOT / "assets" / "nunito-latin.woff2",
          "__FONT_LATIN_EXT__": ROOT / "assets" / "nunito-latin-ext.woff2"}
 
-# Revenue heads in the order they appear on a demand notice (the workbook may order
-# its columns differently; columns are matched by name). The sub-total is the sum
-# of the first seven; the total is kept exactly as the workbook states it.
+# Every revenue head the platform knows, in the order a demand notice lists them.
+# The workbook may order its columns differently (they are matched by name) and may
+# carry only some of the later heads; the platform uses the ones present. The first
+# seven are the fees that make up "Sub-Total Fees" and must always be there.
 HEADS = [
     "Presumptive Turnover Tax",
     "Business Premises Registration",
@@ -44,6 +45,9 @@ HEADS = [
     "Fire Safety Certificate",
     "Produce & Commodity Market Fee",
     "Licences",
+    "Fines",
+    "Sales",
+    "Earnings",
     "Rent on Government Property",
     "Rent on Land",
 ]
@@ -67,9 +71,9 @@ FIELDS = {
     "business size": "size",
     "sub-total fees": "sub",
     "total harmonized assessment": "total",
-    "specialized licences": "head:" + str(HEADS.index("Licences")),
 }
-FIELDS.update({h.lower(): f"head:{i}" for i, h in enumerate(HEADS)})
+HEAD_NAMES = {h.lower(): h for h in HEADS}
+HEAD_NAMES["specialized licences"] = "Licences"
 TOTAL_BILLED = re.compile(r"^total billed( \d{4})?$")  # the sum of the monthly columns
 
 
@@ -168,6 +172,12 @@ def load(workbook_path):
     if not month_cols:
         raise SystemExit("No monthly columns (e.g. Jan-2025) found in the workbook header.")
     month_index = {i: j for j, (i, _) in enumerate(month_cols)}
+    keys = [re.sub(r"\s*\(NGN\)$", "", h, flags=re.I).strip().lower() for h in raw_header]
+    found = {HEAD_NAMES[k] for k in keys if k in HEAD_NAMES}
+    heads_present = [h for h in HEADS if h in found]
+    missing_fees = [h for h in HEADS[:FEE_HEADS] if h not in found]
+    if missing_fees:
+        raise SystemExit("The workbook is missing fee columns: " + ", ".join(missing_fees))
     fields = []
     for i, h in enumerate(raw_header):
         key = re.sub(r"\s*\(NGN\)$", "", h, flags=re.I).strip().lower()
@@ -175,6 +185,8 @@ def load(workbook_path):
             fields.append(f"month:{month_index[i]}")
         elif TOTAL_BILLED.match(key):
             fields.append("billed")
+        elif key in HEAD_NAMES:
+            fields.append(f"head:{heads_present.index(HEAD_NAMES[key])}")
         elif key in FIELDS:
             fields.append(FIELDS[key])
         else:
@@ -183,7 +195,7 @@ def load(workbook_path):
     for need in ("id", "name", "lga", "addr", "cat", "size", "total"):
         if need not in col:
             raise SystemExit(f'The workbook has no "{need}" column.')
-    c_heads = [col[f"head:{h}"] for h in range(len(HEADS))]
+    c_heads = [col[f"head:{h}"] for h in range(len(heads_present))]
 
     lgas, cats, entities = [], [], []
     out = {k: [] for k in ("id", "name", "lga", "addr", "phone", "cat", "size", "cls", "total")}
@@ -255,7 +267,7 @@ def load(workbook_path):
         "cats": cats,
         "sizes": SIZES,
         "entities": entities,
-        "heads": HEADS,
+        "heads": heads_present,
         "feeHeads": FEE_HEADS,
         "count": count,
         "cols": out,
