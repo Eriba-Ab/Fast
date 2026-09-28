@@ -254,6 +254,8 @@ td .sub .pill{margin-top:3px;padding:1px 8px 1px 6px}
 .input,.select{height:40px;width:100%;border-radius:8px;border:0;background:var(--card);box-shadow:0 0 0 1px var(--border-strong),0 1px 2px rgba(0,0,0,.04);padding:0 12px;font-size:14.5px;font-weight:600;color:var(--fg)}
 .input::placeholder{color:#7a7975;font-weight:500}
 .input:hover,.select:hover{box-shadow:0 0 0 1px #b9b7b1,0 1px 2px rgba(0,0,0,.05)}
+.input:disabled,.select:disabled,.chip:disabled{opacity:.45;cursor:not-allowed;box-shadow:0 0 0 1px var(--border)}
+.chip[aria-pressed="true"]:disabled{background:var(--fg-3);box-shadow:none}
 .input:focus,.select:focus{outline:none;box-shadow:0 0 0 1px var(--primary),0 0 0 4px var(--ring)}
 .select{appearance:none;-webkit-appearance:none;padding-right:34px;text-overflow:ellipsis;
   background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%236b6a67' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E") no-repeat right 12px center}
@@ -567,7 +569,9 @@ const IC={
    Data
    ========================================================================= */
 let D; // decoded dataset + derived indexes
-const CLASS_LABEL={MSME:"MSMEs",INST:"Institutions"};
+const CLASS_LABEL={MSME:"MSMEs",INST:"Institutions",Institution:"Institutions"};
+/* The workbook rounds some line items, so a fully paid account can differ from its assessment by a few kobo */
+const ROUNDING=5;
 
 async function loadData(){
   const b64=document.getElementById("data").textContent.trim();
@@ -583,8 +587,9 @@ function prepare(raw){
   const c=raw.cols, N=raw.count, M=raw.months.length, H=raw.heads.length;
   const pay=Float64Array.from(c.pay), headAmt=Float64Array.from(c.heads);
   // taxpayer class from the ID (TR/MSME/2025/00001 → MSME)
-  const classKeys=[]; const cls=new Uint8Array(N);
-  for(let r=0;r<N;r++){const k=(c.id[r].split("/")[1]||"Other");let i=classKeys.indexOf(k);if(i<0){classKeys.push(k);i=classKeys.length-1}cls[r]=i}
+  let classKeys=[], cls=new Uint8Array(N);
+  if(c.cls&&raw.entities){ classKeys=raw.entities; cls=Uint8Array.from(c.cls); }
+  else for(let r=0;r<N;r++){const k=(c.id[r].split("/")[1]||"Other");let i=classKeys.indexOf(k);if(i<0){classKeys.push(k);i=classKeys.length-1}cls[r]=i}
   const classes=classKeys.map(k=>CLASS_LABEL[k]||k);
   const headSum=new Float64Array(N), paidAll=new Float64Array(N);
   for(let r=0;r<N;r++){let s=0;for(let h=0;h<H;h++)s+=headAmt[r*H+h];headSum[r]=s;let p=0;for(let m=0;m<M;m++)p+=pay[r*M+m];paidAll[r]=p}
@@ -596,7 +601,7 @@ function prepare(raw){
   for(let r=0;r<N;r++) hay[r]=(c.id[r]+" "+c.name[r]+" "+c.addr[r]+" "+c.phone[r]+" "+raw.lgas[c.lga[r]]).toLowerCase();
   const assessed=c.total.reduce((a,b)=>a+b,0);
   return {...raw,N,M,H,pay,headAmt,cls,classes,headSum,paidAll,monthTotal,years,byId,hay,assessed,
-    lga:c.lga,cat:c.cat,size:c.size,total:c.total,id:c.id,name:c.name,addr:c.addr,phone:c.phone};
+    lga:c.lga,cat:c.cat,size:c.size,total:c.total,id:c.id,name:c.name,entities:classKeys,addr:c.addr,phone:c.phone,stat:raw.stat||[]};
 }
 
 /* Aggregate a set of month indexes over rows passing `keep` */
@@ -867,7 +872,7 @@ function registryRows(){
 }
 function statusPill(r){
   const bal=D.total[r]-D.paidAll[r];
-  return bal<=0?'<span class="pill ok">'+IC.check+'Paid in full</span>':'<span class="pill due">'+IC.alert+compact(bal)+' due</span>';
+  return bal<=ROUNDING?'<span class="pill ok">'+IC.check+'Paid in full</span>':'<span class="pill due">'+IC.alert+compact(bal)+' due</span>';
 }
 function renderRegistry(){
   const yrs=D.years.join(", ");
@@ -915,7 +920,7 @@ function drawRegistry(){
   box.querySelector("#rnext").onclick=()=>{f.page++;drawRegistry();view.scrollIntoView({block:"start"})};
   box.querySelector("#rdl").onclick=()=>{
     const head=["Taxpayer ID","Business name","Class","LGA","Business address","Phone","Business category","Business size","Total harmonized assessment (NGN)",...D.months.map(m=>"Collected "+monthShort(m)+" "+m.slice(0,4)+" (NGN)"),"Total collected (NGN)","Balance (NGN)"];
-    const lines=[["Taraba Central Billing and Collections: taxpayer list"],["Generated "+today()+" from "+D.source],[],head];
+    const lines=[["Taraba Central Billing and Collections: taxpayer list"],[generatedLine()],[],head];
     rows.forEach(r=>lines.push([D.id[r],D.name[r],D.classes[D.cls[r]],D.lgas[D.lga[r]],D.addr[r],D.phone[r],D.cats[D.cat[r]],D.sizes[D.size[r]],plain2(D.total[r]),...D.months.map((_,m)=>plain2(D.pay[r*D.M+m])),plain2(D.paidAll[r]),plain2(D.total[r]-D.paidAll[r])]));
     csvDownload("TIRS_Taxpayer_List_"+new Date().toISOString().slice(0,10)+".csv",lines);
   };
@@ -998,8 +1003,9 @@ function renderNotice(id){
       +'<h3 class="doc-h">Payments received</h3>'
       +'<div class="months-grid">'+months+'</div>'
       +'<div class="doc-status"><div><small>Total assessed</small><b>'+naira(total)+'</b></div><div><small>Total paid</small><b>'+naira(paid)+'</b></div>'
-        +'<div class="'+(bal<=0?"ok":"due")+'"><small>Balance</small><b>'+(bal<=0?"₦0.00 · Paid in full":naira(bal)+" outstanding")+'</b></div></div>'
-      +'<footer class="doc-foot"><span>Issued from the Taraba Central Billing and Collections registry ('+esc(D.source)+').</span><span>Printed '+esc(today())+'</span></footer>'
+        +'<div class="'+(bal<=ROUNDING?"ok":"due")+'"><small>Balance</small><b>'+(bal<=0?"₦0.00 · Paid in full":bal<=ROUNDING?naira(bal)+" · Paid in full":naira(bal)+" outstanding")+'</b></div></div>'
+      +(bal!==0&&Math.abs(bal)<=ROUNDING?'<p class="doc-note">Total paid differs from the assessment by '+naira(Math.abs(bal))+' because the registry rounds some amounts. The account is treated as paid in full.</p>':"")
+      +'<footer class="doc-foot"><span>Issued by the Taraba State Internal Revenue Service through Taraba Central Billing and Collections.</span><span>Printed '+esc(today())+'</span></footer>'
     +'</article>';
   bindLookup(view.querySelector("#nq"),view.querySelector("#nlist"));
   view.querySelector("#nprint").onclick=()=>window.print();
@@ -1063,8 +1069,34 @@ function filterDesc(p){
   if(p.cls!=="") parts.push(D.classes[+p.cls]);
   return parts.join(" · ");
 }
-/* Build a report as {title, head, rows, foot, numericCols, previewLimit} of raw values; the table and CSV render from it */
+const isStat=p=>String(p.type).startsWith("stat");
+/* Statutory breakdown: one row per business in the source workbook's exact column layout */
+function buildStatReport(p){
+  const L=D.stat.find(s=>s.key===p.type), keep=reportFilter(p), H=D.H, fees=D.feeHeads;
+  const kindOf=f=>(f==="sub"||f==="total"||f==="billed"||f.startsWith("head:")||f.startsWith("month:"))?"m":"t";
+  const get={
+    id:r=>D.id[r], name:r=>D.name[r], entity:r=>D.entities[D.cls[r]], lga:r=>D.lgas[D.lga[r]], addr:r=>D.addr[r], cat:r=>D.cats[D.cat[r]],
+    size:r=>D.sizes[D.size[r]], total:r=>D.total[r], billed:r=>D.paidAll[r],
+    // the sheet stores phone numbers as numbers (no leading zero); reproduce that
+    phone:r=>L.phoneNumeric&&D.phone[r]?Number(D.phone[r]):D.phone[r],
+    sub:r=>{let t=0;for(let h=0;h<fees;h++)t+=D.headAmt[r*H+h];return t},
+  };
+  const cols=L.fields.map(f=>f.startsWith("head:")?(h=>r=>D.headAmt[r*H+h])(+f.slice(5))
+    :f.startsWith("month:")?(m=>r=>D.pay[r*D.M+m])(+f.slice(6)):get[f]);
+  const kinds=L.fields.map(kindOf), rows=[];
+  for(const r of L.rows){ if(keep&&!keep(r)) continue; rows.push(cols.map(fn=>fn(r))); }
+  const foot=kinds.map((k,i)=>i===0?"Total":k==="m"?rows.reduce((a,row)=>a+row[i],0):i===1?int(rows.length)+" businesses":"");
+  const cellKinds=kinds.map((k,i)=>L.fields[i]==="phone"?"t":k);
+  const year=D.years.join("-");
+  return {title:L.title,head:L.headers.slice(),kinds:cellKinds,rows,foot,previewLimit:100,exact:{sheet:L.sheet,design:L.design},year,period:"Assessment and collections "+year};
+}
 function buildReport(p,mIdx){
+  const R=isStat(p)?buildStatReport(p):buildReportCore(p,mIdx);
+  if(!R.period) R.period=dayLong(p.from)+" to "+dayLong(p.to)+" ("+spanLabel(mIdx)+")";
+  return R;
+}
+/* Build a report as {title, head, rows, foot, numericCols, previewLimit} of raw values; the table and CSV render from it */
+function buildReportCore(p,mIdx){
   const keep=reportFilter(p), groups=periodGroups(mIdx,p.group);
   const T=aggregate(mIdx,keep);
   const def=REPORTS.find(x=>x.id===p.type);
@@ -1112,7 +1144,7 @@ function cellCsv(v,k){
 function renderReports(){
   if(!state.report) state.report=defaultReport();
   const p=state.report;
-  simpleBand("Reports and downloads","Choose a date range and a report. Every report downloads in full, as a CSV file that opens in Excel or as a PDF.");
+  simpleBand("Reports and downloads","Choose a report and, for collections, a date range. Every report downloads in full as Excel, CSV or PDF.");
   const pre=presets();
   const bounds=defaultReport();
   view.innerHTML=
@@ -1137,7 +1169,7 @@ function renderReports(){
         +REPORTS.map(r=>'<label class="rtype"><input type="radio" name="rtype" value="'+r.id+'"'+(p.type===r.id?" checked":"")+'><span><b>'+esc(r.name)+'</b><span>'+esc(r.desc)+'</span></span></label>').join("")
       +'</fieldset>'
     +'</div>'
-    +'<div class="report-actions"><button class="btn btn-primary" id="dcsv" type="button">'+IC.dl+'Download CSV</button><button class="btn btn-quiet" id="dpdf" type="button">'+IC.dl+'Download PDF</button><p id="dsize"></p></div></div>'
+    +'<div class="report-actions"><button class="btn btn-primary" id="dxlsx" type="button">'+IC.dl+'Download Excel</button><button class="btn btn-quiet" id="dcsv" type="button">'+IC.dl+'Download CSV</button><button class="btn btn-quiet" id="dpdf" type="button">'+IC.dl+'Download PDF</button><p id="dsize"></p></div></div>'
     +sec("Preview")+'<div id="prev" style="margin-top:18px"></div>';
   view.querySelector("#dgroup").value=p.group;
   const $=s=>view.querySelector(s);
@@ -1151,10 +1183,12 @@ function renderReports(){
   view.querySelectorAll('input[name="rtype"]').forEach(i=>i.onchange=()=>{p.type=i.value;refresh()});
   $("#dpdf").onclick=()=>pdfReport();
   $("#dcsv").onclick=()=>downloadReport();
+  $("#dxlsx").onclick=()=>xlsxReport();
   function syncChips(){view.querySelectorAll(".chip").forEach(c=>{const x=pre[+c.dataset.p];c.setAttribute("aria-pressed",String(x.from===p.from&&x.to===p.to))})}
   drawReport();
 }
 function reportCheck(p){
+  if(isStat(p)) return {mIdx:D.months.map((_,i)=>i)};
   if(!validDate(p.from)||!validDate(p.to)) return {err:"Enter both dates in full to build the report."};
   if(p.from>p.to) return {err:"The start date ("+dayLong(p.from)+") is after the end date ("+dayLong(p.to)+").",swap:true};
   const mIdx=monthsInRange(p.from,p.to);
@@ -1163,31 +1197,34 @@ function reportCheck(p){
 }
 function drawReport(){
   const p=state.report, cover=view.querySelector("#cover"), prev=view.querySelector("#prev"), chk=reportCheck(p);
-  const csvBtn=view.querySelector("#dcsv"), prBtn=view.querySelector("#dpdf");
+  const csvBtn=view.querySelector("#dcsv"), prBtn=view.querySelector("#dpdf"), xlBtn=view.querySelector("#dxlsx"), stat=isStat(p);
+  ["#dfrom","#dto","#dgroup","#dmonth"].forEach(s=>view.querySelector(s).disabled=stat);
+  view.querySelectorAll(".chip").forEach(c=>c.disabled=stat);
   view.querySelector("#dfrom").setAttribute("aria-invalid",String(!!chk.err));
   view.querySelector("#dto").setAttribute("aria-invalid",String(!!chk.err));
   if(chk.err){
     cover.innerHTML='<div class="coverage err" role="alert">'+IC.alert+'<span>'+esc(chk.err)+(chk.swap?' <button class="linkish" id="dswap" type="button">Swap the dates</button>':'')+'</span></div>';
     if(chk.swap) cover.querySelector("#dswap").onclick=()=>{[p.from,p.to]=[p.to,p.from];renderReports()};
     prev.innerHTML='<div class="empty"><h3>No preview yet</h3><p>Fix the date range above and the report will appear here.</p></div>';
-    csvBtn.disabled=prBtn.disabled=true; view.querySelector("#dsize").textContent="";
+    csvBtn.disabled=prBtn.disabled=xlBtn.disabled=true; view.querySelector("#dsize").textContent="";
     return;
   }
-  csvBtn.disabled=prBtn.disabled=false;
+  csvBtn.disabled=prBtn.disabled=xlBtn.disabled=false;
   const mIdx=chk.mIdx, r=rangeOf(mIdx);
   const snapped=r.from!==p.from||r.to!==p.to;
-  cover.innerHTML='<div class="coverage">'+IC.info+'<span>Covers '+esc(dayLong(p.from))+' to '+esc(dayLong(p.to))+': '+mIdx.length+' '+(mIdx.length===1?"month":"months")+' of collections ('+esc(spanLabel(mIdx))+').'+(snapped?' Collections are recorded monthly, so the report includes every month the range touches.':'')+'</span></div>';
+  if(stat) cover.innerHTML='<div class="coverage">'+IC.info+'<span>The statutory breakdown is the whole registry sheet for '+esc(D.years.join(", "))+': every business&#39;s assessment by revenue head and its monthly collections, in the same sheet, columns and order as the spreadsheet. The date range does not apply; the LGA, category, size and class filters do.</span></div>';
+  else cover.innerHTML='<div class="coverage">'+IC.info+'<span>Covers '+esc(dayLong(p.from))+' to '+esc(dayLong(p.to))+': '+mIdx.length+' '+(mIdx.length===1?"month":"months")+' of collections ('+esc(spanLabel(mIdx))+').'+(snapped?' Collections are recorded monthly, so the report includes every month the range touches.':'')+'</span></div>';
   const R=buildReport(p,mIdx);
   const fd=filterDesc(p);
-  const sub=R.title+" · "+dayLong(p.from)+" to "+dayLong(p.to)+(fd?" · "+fd:"");
+  const sub=R.title+" · "+R.period+(fd?" · "+fd:"");
   const ph=view.querySelector("#phSub"); if(ph) ph.textContent=sub;
   const lim=R.previewLimit||Infinity, shown=R.rows.slice(0,lim);
-  prev.innerHTML='<div class="preview-title"><h3>'+esc(R.title)+'</h3><p>'+esc(dayLong(p.from)+" to "+dayLong(p.to)+(fd?" · "+fd:""))+'</p></div>'
+  prev.innerHTML='<div class="preview-title"><h3>'+esc(R.title)+'</h3><p>'+esc(R.period+(fd?" · "+fd:""))+'</p></div>'
     +(R.rows.length?reportTable(R,shown)
     :'<div class="empty"><h3>No businesses match these filters</h3><p>Widen the LGA, category, size or class filters to include more taxpayers.</p></div>')
-    +(R.rows.length>lim?'<p class="note no-print">Showing the first '+int(lim)+' of '+int(R.rows.length)+' rows. The CSV download and the PDF contain every row.</p>':"")
+    +(R.rows.length>lim?'<p class="note no-print">Showing the first '+int(lim)+' of '+int(R.rows.length)+' rows. The Excel, CSV and PDF downloads contain every row.</p>':"")
     +(R.note?'<p class="note">'+esc(R.note)+'</p>':"");
-  view.querySelector("#dsize").textContent=int(R.rows.length)+" "+(R.rows.length===1?"row":"rows")+" in the download and the PDF";
+  view.querySelector("#dsize").textContent=int(R.rows.length)+" "+(R.rows.length===1?"row":"rows")+" in each download";
 }
 function reportTable(R,rows){
   const cls=i=>(R.kinds[i]!=="t"?"r":"");
@@ -1258,7 +1295,7 @@ function makePdf(R,p,mIdx){
   };
   const xs=[]; widths.reduce((x,w)=>{xs.push(x);return x+w},M);
   const RH=fs*1.55, fd=filterDesc(p);
-  const period=dayLong(p.from)+" to "+dayLong(p.to)+" ("+spanLabel(mIdx)+")";
+  const period=R.period;
   const seal=document.querySelector(".brand img").src;
 
   function tableHead(y){
@@ -1318,7 +1355,7 @@ function makePdf(R,p,mIdx){
     if(y+14+lines.length*10>bottom){doc.addPage(); y=M;}
     doc.text(lines,M,y+14);
   }
-  const pages=doc.getNumberOfPages(), stamp=pdfSafe("Generated "+today()+" from "+D.source);
+  const pages=doc.getNumberOfPages(), stamp=pdfSafe(generatedLine());
   for(let i=1;i<=pages;i++){
     doc.setPage(i); doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...MUTED);
     doc.text(stamp,M,H-M+4);
@@ -1333,12 +1370,11 @@ function pdfReport(){
   const R=buildReport(p,chk.mIdx);
   if(!R.rows.length) return;
   btn.disabled=true; btn.innerHTML=IC.dl+"Building PDF…";
-  note.textContent="Building a PDF of all "+int(R.rows.length)+" rows. Large reports take a few seconds.";
+  note.textContent="Building a PDF of all "+int(R.rows.length)+" rows. "+(R.rows.length*R.head.length>400000?"This one takes about a minute.":"Large reports take a few seconds.");
   setTimeout(()=>{
     try{
       const doc=makePdf(R,p,chk.mIdx);
-      const slug=R.title.replace(/[^A-Za-z]+/g,"_").replace(/_$/,"");
-      doc.save("TIRS_"+slug+"_"+p.from+"_to_"+p.to+".pdf");
+      doc.save(reportFileBase(p,R)+".pdf");
       note.textContent="PDF downloaded: "+int(R.rows.length)+" rows on "+int(doc.getNumberOfPages())+(doc.getNumberOfPages()===1?" page.":" pages.");
     }catch(e){
       console.error(e);
@@ -1349,16 +1385,149 @@ function pdfReport(){
 function downloadReport(){
   const p=state.report, chk=reportCheck(p); if(chk.err) return;
   const R=buildReport(p,chk.mIdx), fd=filterDesc(p);
-  const lines=[["Taraba Central Billing and Collections: "+R.title],["Period: "+dayLong(p.from)+" to "+dayLong(p.to)+" ("+spanLabel(chk.mIdx)+")"]];
+  if(R.exact){
+    csvDownload(reportFileBase(p,R)+".csv",[R.head,...R.rows.map(row=>row.map((v,i)=>R.kinds[i]==="m"?plain2(v):v))]);
+    return;
+  }
+  const lines=[["Taraba Central Billing and Collections: "+R.title],["Period: "+R.period]];
   if(fd) lines.push(["Filters: "+fd]);
-  lines.push(["Generated "+today()+" from "+D.source]);
+  lines.push([generatedLine()]);
   if(R.note) lines.push([R.note]);
   lines.push([],R.head.map(h=>h.replace("(₦)","(NGN)")));
   R.rows.forEach(row=>lines.push(row.map((v,i)=>cellCsv(v,R.kinds[i]))));
   lines.push(R.foot.map((v,i)=>v===""?"":cellCsv(v,R.kinds[i])));
-  const slug=R.title.replace(/[^A-Za-z]+/g,"_").replace(/_$/,"");
-  csvDownload("TIRS_"+slug+"_"+p.from+"_to_"+p.to+".csv",lines);
+  csvDownload(reportFileBase(p,R)+".csv",lines);
 }
+
+/* =========================================================================
+   Excel (.xlsx) export: a minimal SpreadsheetML writer + zip, no library.
+   Statutory breakdowns are written in exactly the layout of their source
+   workbook (sheet name, headers, column order, bold bordered header row).
+   ========================================================================= */
+const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(d){let c=0xFFFFFFFF;for(let i=0;i<d.length;i++)c=CRC_TABLE[(c^d[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+async function deflateRaw(d){
+  if(typeof CompressionStream==="undefined") return null;
+  try{return new Uint8Array(await new Response(new Blob([d]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer())}catch(e){return null}
+}
+async function zipBlob(files,type){
+  const enc=new TextEncoder(), parts=[], central=[], now=new Date();
+  const time=(now.getHours()<<11)|(now.getMinutes()<<5)|(now.getSeconds()>>1);
+  const date=((now.getFullYear()-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate();
+  let offset=0;
+  for(const f of files){
+    const name=enc.encode(f.name), data=enc.encode(f.text), crc=crc32(data);
+    const packed=await deflateRaw(data), method=packed?8:0, body=packed||data;
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,method,true);h.setUint16(10,time,true);h.setUint16(12,date,true);
+    h.setUint32(14,crc,true);h.setUint32(18,body.length,true);h.setUint32(22,data.length,true);h.setUint16(26,name.length,true);h.setUint16(28,0,true);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(10,method,true);c.setUint16(12,time,true);c.setUint16(14,date,true);
+    c.setUint32(16,crc,true);c.setUint32(20,body.length,true);c.setUint32(24,data.length,true);c.setUint16(28,name.length,true);c.setUint32(42,offset,true);
+    parts.push(h,name,body); central.push(c,name);
+    offset+=30+name.length+body.length;
+  }
+  const cdSize=central.reduce((a,x)=>a+x.byteLength,0), e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdSize,true);e.setUint32(16,offset,true);
+  return new Blob([...parts,...central,e],{type});
+}
+const xesc=s=>String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+function colName(i){let s="";i++;while(i>0){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s}
+/* cell styles: 0 plain, 1 header (bold, centred, thin border), 2 #,##0.00, 3 #,##0, 4 0.0%, 5 title, 6-8 bold 2-4, 9 bold text */
+const XLSX_STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+  +'<numFmts count="1"><numFmt numFmtId="164" formatCode="0.0%"/></numFmts>'
+  +'<fonts count="3"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="13"/><name val="Calibri"/><family val="2"/></font></fonts>'
+  +'<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
+  +'<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders>'
+  +'<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+  +'<cellXfs count="10"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+  +'<xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="top"/></xf>'
+  +'<xf numFmtId="4" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="3" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
+  +'<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+  +'<xf numFmtId="4" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1"/><xf numFmtId="3" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1"/><xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyNumberFormat="1"/>'
+  +'<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>'
+  +'<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+/* rows: arrays of cells {v, s, f} (v number → numeric cell, string → text cell, null → empty; f → formula with v as its cached value).
+   design (optional): the source sheet's own styles, theme, column widths, frozen panes and row heights. */
+function xlsxBlob(sheetName,rows,widths,design){
+  const out=[], dz=design||{};
+  const rowAttr=ri=>ri===0&&dz.headerHt?' ht="'+dz.headerHt+'" customHeight="1"':ri>0&&dz.rowHt?' ht="'+dz.rowHt+'" customHeight="1"':"";
+  rows.forEach((row,ri)=>{
+    let x='<row r="'+(ri+1)+'"'+rowAttr(ri)+'>';
+    row.forEach((c,ci)=>{
+      if(!c||((c.v==null||c.v==="")&&!c.f&&!c.s)) return;
+      const ref=colName(ci)+(ri+1), s=c.s?' s="'+c.s+'"':"";
+      if(c.f) x+='<c r="'+ref+'"'+s+'><f>'+xesc(c.f)+'</f><v>'+c.v+'</v></c>';
+      else if(c.v==null||c.v==="") x+='<c r="'+ref+'"'+s+'/>';
+      else x+=typeof c.v==="number"?'<c r="'+ref+'"'+s+'><v>'+c.v+'</v></c>':'<c r="'+ref+'"'+s+' t="inlineStr"><is><t xml:space="preserve">'+xesc(c.v)+'</t></is></c>';
+    });
+    out.push(x+'</row>');
+  });
+  const cols=dz.cols?dz.cols:widths?'<cols>'+widths.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w.toFixed(1)+'" customWidth="1"/>').join("")+'</cols>':"";
+  let views="";
+  if(dz.xSplit||dz.ySplit){
+    const tl=colName(dz.xSplit||0)+((dz.ySplit||0)+1), pane=dz.xSplit&&dz.ySplit?"bottomRight":dz.ySplit?"bottomLeft":"topRight";
+    views='<sheetViews><sheetView tabSelected="1" workbookViewId="0"><pane'+(dz.xSplit?' xSplit="'+dz.xSplit+'"':"")+(dz.ySplit?' ySplit="'+dz.ySplit+'"':"")+' topLeftCell="'+tl+'" activePane="'+pane+'" state="frozen"/><selection pane="'+pane+'" activeCell="'+tl+'" sqref="'+tl+'"/></sheetView></sheetViews>';
+  }
+  const fmt=design?'<sheetFormatPr'+(dz.defaultColWidth?' defaultColWidth="'+dz.defaultColWidth+'"':"")+' defaultRowHeight="'+(dz.defaultRowHeight||"15")+'"/>':"";
+  const hasF=rows.some(r=>r.some(c=>c&&c.f));
+  const name=xesc(sheetName.replace(/[\[\]:*?\/\\]/g," ").slice(0,31));
+  const theme=dz.theme?[{name:"xl/theme/theme1.xml",text:dz.theme}]:[];
+  return zipBlob([
+    {name:"[Content_Types].xml",text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+(theme.length?'<Override PartName="/xl/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>':"")+'</Types>'},
+    {name:"_rels/.rels",text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+    {name:"xl/workbook.xml",text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="'+name+'" sheetId="1" r:id="rId1"/></sheets>'+(hasF?'<calcPr calcId="191029" fullCalcOnLoad="1"/>':"")+'</workbook>'},
+    {name:"xl/_rels/workbook.xml.rels",text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+(theme.length?'<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>':"")+'</Relationships>'},
+    {name:"xl/styles.xml",text:dz.styles||XLSX_STYLES},
+    ...theme,
+    {name:"xl/worksheets/sheet1.xml",text:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+views+fmt+cols+'<sheetData>'+out.join("")+'</sheetData></worksheet>'},
+  ],"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+}
+function saveBlob(blob,filename){
+  const url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=filename; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove()},1500);
+}
+function reportFileBase(p,R){
+  const slug=R.title.replace(/[^A-Za-z]+/g,"_").replace(/_$/,"");
+  const fd=filterDesc(p).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"");
+  return R.exact?"TIRS_"+slug+"_"+R.year+(fd?"_"+fd:""):"TIRS_"+slug+"_"+p.from+"_to_"+p.to;
+}
+async function xlsxReport(){
+  const p=state.report, chk=reportCheck(p); if(chk.err) return;
+  const btn=view.querySelector("#dxlsx"), note=view.querySelector("#dsize"), label=btn.innerHTML;
+  const R=buildReport(p,chk.mIdx); if(!R.rows.length) return;
+  btn.disabled=true; btn.innerHTML=IC.dl+"Building Excel…";
+  note.textContent="Building an Excel file of all "+int(R.rows.length)+" rows.";
+  await new Promise(r=>setTimeout(r,40));
+  try{
+    let rows, widths=null;
+    if(R.exact){
+      // same layout as the statutory workbook: header row, then one row per business, values as numbers
+      const dz=R.exact.design||{}, hs=dz.headerS||[], ds=dz.dataS||[], fs=dz.formulas||[];
+      rows=[R.head.map((h,i)=>({v:h,s:hs[i]!=null?hs[i]:1}))];
+      R.rows.forEach((row,j)=>{const rn=j+2; rows.push(row.map((v,i)=>({v:R.kinds[i]==="m"?v/100:v,s:ds[i]||0,f:fs[i]?fs[i].replace(/\{r\}/g,rn):null})))});
+    }else{
+      const fd=filterDesc(p), numStyle={m:2,n:3,p:4}, boldStyle={m:6,n:7,p:8};
+      const val=(v,k)=>k==="m"&&typeof v==="number"?v/100:v;
+      rows=[[{v:"Taraba Central Billing and Collections: "+R.title,s:5}],[{v:"Period: "+R.period}]];
+      if(fd) rows.push([{v:"Filters: "+fd}]);
+      rows.push([{v:generatedLine()}]);
+      if(R.note) rows.push([{v:R.note}]);
+      rows.push([]);
+      rows.push(R.head.map(h=>({v:h.replace("(₦)","(NGN)"),s:1})));
+      for(const row of R.rows) rows.push(row.map((v,i)=>({v:val(v,R.kinds[i]),s:typeof v==="number"?numStyle[R.kinds[i]]||0:0})));
+      rows.push(R.foot.map((v,i)=>({v:val(v,R.kinds[i]),s:typeof v==="number"?boldStyle[R.kinds[i]]||9:9})));
+      widths=R.head.map((h,i)=>{let w=Math.min(h.length,28);for(const row of R.rows){const v=row[i];const len=R.kinds[i]==="m"?nf2.format(v/100).length:String(v).length;if(len>w)w=len}return Math.min(Math.max(w+2,9),60)});
+    }
+    saveBlob(await xlsxBlob(R.exact?R.exact.sheet:R.title,rows,widths,R.exact?R.exact.design:null),reportFileBase(p,R)+".xlsx");
+    note.textContent="Excel downloaded: "+int(R.rows.length)+" rows.";
+  }catch(e){
+    console.error(e);
+    note.textContent="The Excel file could not be created ("+e.message+"). Download the CSV instead.";
+  }finally{btn.disabled=false; btn.innerHTML=label}
+}
+const generatedLine=()=>"Generated "+today()+" · Taraba State Internal Revenue Service";
 
 /* =========================================================================
    Router + shell
@@ -1389,6 +1558,7 @@ window.addEventListener("hashchange",route);
 
 loadData().then(d=>{
   D=d;
+  (D.stat||[]).forEach(L=>REPORTS.push({id:L.key,name:L.title,desc:"All "+int(L.rows.length)+" businesses: assessment by revenue head and monthly collections, in the spreadsheet's own layout."}));
   state.scope={kind:"year",year:D.years[D.years.length-1]};
   route();
 }).catch(err=>{
