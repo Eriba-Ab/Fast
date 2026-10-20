@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en-NG">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Pay demand notices · Taraba State Internal Revenue Service</title>
+<meta name="description" content="Find, view and pay your Taraba State demand notice by notice number or TTIN.">
+<link rel="icon" href="data:image/png;base64,__SEAL__">
+__STYLE__
+<style>
+/* public page: no sidebar, the sheet takes the full width of the shell */
+.shell.public{display:block}
+.shell.public .sheet{margin-top:-72px}
+.pay-form{display:grid;grid-template-columns:minmax(0,360px) max-content;gap:10px;align-items:end;margin-top:18px}
+.pay-list{margin-top:18px}
+.pay-list table td .btn{height:30px;padding:0 10px;font-size:12.5px}
+.result{margin-top:16px}
+.verify-card{margin-top:20px;max-width:640px}
+@media (max-width:900px){.shell.public .sheet{margin-top:-56px}}
+@media (max-width:640px){.pay-form{grid-template-columns:1fr}.pay-figs .fig:nth-child(2),.pay-figs .fig:nth-child(3){grid-column:span 2}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="band">
+    <div class="band-inner">
+      <div class="topbar">
+        <a class="brand" href="#/pay">
+          <img src="data:image/png;base64,__SEAL__" alt="Taraba State Government coat of arms">
+          <span><strong>Taraba Central Billing and Collections</strong><span>Taraba State Internal Revenue Service</span></span>
+        </a>
+      </div>
+      <div class="band-body simple" id="band"></div>
+    </div>
+  </header>
+  <div class="shell public">
+    <main class="sheet" id="view" tabindex="-1">
+      <div class="loading" aria-live="polite"><div class="sk" style="height:22px;width:30%;margin-top:14px"></div><div class="sk" style="height:110px;margin-top:22px"></div></div>
+    </main>
+  </div>
+</div>
+<script>/* jsPDF 2.5.2, MIT licence, https://github.com/parallax/jsPDF */
+__JSPDF__</script>
+<script>/* qrcode-generator 1.4.4, MIT licence, Kazuhiko Arase */
+__QRCODE__</script>
+<script>
+"use strict";
+(function(){
+/* ---------- formatting ---------- */
+const MONTHS_LONG=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const nf2=new Intl.NumberFormat("en-NG",{minimumFractionDigits:2,maximumFractionDigits:2});
+const naira=k=>"₦"+nf2.format(k/100);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+function dateUS(iso){const [y,m,d]=iso.slice(0,10).split("-").map(Number);return MONTHS_LONG[m-1]+" "+d+", "+y}
+function dateTimeWAT(iso){
+  if(!iso) return "Not recorded";
+  const d=new Date(iso); if(isNaN(d)) return iso;
+  const w=new Date(d.getTime()+60*60*1000);               // West Africa Time, UTC+1
+  const p=n=>String(n).padStart(2,"0");
+  return MONTHS_LONG[w.getUTCMonth()]+" "+w.getUTCDate()+", "+w.getUTCFullYear()+", "+p(w.getUTCHours())+":"+p(w.getUTCMinutes())+" WAT";
+}
+function today(){const d=new Date();return d.getDate()+" "+MONTHS_LONG[d.getMonth()]+" "+d.getFullYear()}
+const generatedLine=()=>"Generated "+today()+" · Taraba State Internal Revenue Service";
+const pdfSafe=s=>String(s).replace(/₦/g,"NGN ").replace(/[–—−]/g,"-").replace(/…/g,"...").replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[^\x00-\xFF]/g,"?");
+
+const ONES=["","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+const TENS=["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+function under1000(n){const out=[];if(n>=100){out.push(ONES[Math.floor(n/100)]+" hundred");n%=100;if(n)out.push("and")}
+  if(n>=20){out.push(TENS[Math.floor(n/10)]+(n%10?"-"+ONES[n%10]:""))}else if(n>0){out.push(ONES[n])}return out.join(" ")}
+function words(n){if(n===0)return "zero";const out=[];for(const [v,name] of [[1e9,"billion"],[1e6,"million"],[1e3,"thousand"]]){if(n>=v){out.push(under1000(Math.floor(n/v))+" "+name);n%=v}}
+  if(n>0){if(out.length&&n<100)out.push("and");out.push(under1000(n))}return out.join(" ")}
+function noticeWords(k){const t=s=>s.replace(/-/g," ").replace(/\b([a-z])/g,(m,c)=>c.toUpperCase()).replace(/\bAnd\b/g,"and");
+  const n=Math.floor(k/100),kb=k%100;return t(words(n))+" Naira"+(kb?", "+t(words(kb))+" Kobo":"")+" Only"}
+
+const IC={
+  search:'<svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  alert:'<svg class="i" viewBox="0 0 24 24"><path d="M12 8v5M12 16.5h.01"/><circle cx="12" cy="12" r="9"/></svg>',
+  check:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12.5 10 17l9-10"/></svg>',
+  info:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg>',
+  dl:'<svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>',
+  print:'<svg class="i" viewBox="0 0 24 24"><path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></svg>',
+  arrow:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  back:'<svg class="i" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+  lock:'<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+};
+const BILLING={name:"TARABA STATE CENTRAL BILLING SYSTEM",address:"No. 56 Hammaruwa way, Jalingo, Taraba state",
+  tel:"Tel: +234 812 766 7894",signatory:"Brigadier General Jeremiah Aliyu Faransa (Rtd).",title:"Executive Chairman"};
+const SITE=location.origin+"/";
+const payUrl=dn=>SITE+"#/pay/"+encodeURIComponent(dn);
+const verifyUrl=ref=>SITE+"#/verify?ref="+encodeURIComponent(ref);
+function qrSvg(text,label){if(typeof qrcode!=="function")return "";const q=qrcode(0,"M");q.addData(text);q.make();
+  return q.createSvgTag({cellSize:4,margin:0,scalable:true,alt:label||"QR code",title:label||""})}
+const sealSrc=()=>document.querySelector(".brand img").src;
+
+/* ---------- shell ---------- */
+const band=document.getElementById("band"), view=document.getElementById("view");
+function setBand(title,lede){band.innerHTML='<h1>'+esc(title)+'</h1><p class="band-lede">'+esc(lede)+'</p>'}
+function sec(title){return '<div class="sec"><h2>'+esc(title)+'</h2></div>'}
+async function api(path,opts){
+  try{
+    const r=await fetch(path,Object.assign({headers:{"Accept":"application/json"},credentials:"same-origin"},opts||{}));
+    let data={}; try{data=await r.json()}catch(e){}
+    return {ok:r.ok,status:r.status,data};
+  }catch(e){return {ok:false,status:0,data:{error:"The service could not be reached. Check your connection and try again."}}}
+}
+const errBox=msg=>'<div class="coverage err" role="alert" style="margin-top:16px">'+IC.alert+'<span>'+esc(msg)+'</span></div>';
+const infoBox=msg=>'<div class="coverage" style="margin-top:16px">'+IC.info+'<span>'+msg+'</span></div>';
+
+/* ---------- pay ---------- */
+let pollTimer=null;
+function searchForm(q){
+  return sec("Search demand notice")
+    +'<form class="pay-search" id="pform" novalidate>'
+      +'<div class="field"><label for="pq">TTIN or Notice Number</label><div class="search">'+IC.search
+      +'<input class="input" id="pq" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. DN202520000112345 or TTIN20250000045" value="'+esc(q||"")+'"></div></div>'
+      +'<button class="btn btn-primary" type="submit">'+IC.search+'Search</button></form>';
+}
+function bindSearch(){
+  const form=view.querySelector("#pform"), input=view.querySelector("#pq");
+  form.onsubmit=e=>{e.preventDefault();const v=input.value.trim().toUpperCase();
+    if(!v){input.setAttribute("aria-invalid","true");input.focus();return}
+    location.hash="#/pay/"+encodeURIComponent(v)};
+  input.oninput=()=>input.removeAttribute("aria-invalid");
+  return input;
+}
+async function renderPay(q,params){
+  clearTimeout(pollTimer);
+  setBand("Pay demand notices","Find your notice using TTIN or Notice Number, or scan the QR code on your demand notice.");
+  view.innerHTML=searchForm(q)+'<div id="pres"></div>';
+  const input=bindSearch(), res=view.querySelector("#pres");
+  if(!q){
+    res.innerHTML='<div class="empty" style="margin-top:22px"><h3>Enter a notice number or TTIN</h3><p>Notice numbers start with DN and have 15 digits. TTINs start with TTIN. Both are printed at the top of every demand notice.</p></div>';
+    input.focus(); return;
+  }
+  res.innerHTML='<div class="sk" style="height:140px;margin-top:22px"></div>';
+  const {ok,data}=await api("/api/notice?q="+encodeURIComponent(q));
+  if(!ok){input.setAttribute("aria-invalid","true");res.innerHTML=errBox(data.error||"Something went wrong.");return}
+  if(data.dn!==q.toUpperCase()&&location.hash.indexOf(data.dn)<0) history.replaceState(null,"","#/pay/"+data.dn+(params.result?"?result="+params.result:""));
+  drawPayCard(res,data,params.result,0);
+}
+function drawPayCard(res,n,result,polls){
+  const counted=n.payments.filter(p=>p.receipt_token);
+  const lastLive=counted[counted.length-1];
+  let banner="";
+  if(result==="paid"&&lastLive) banner='<div class="coverage" role="status">'+IC.check+'<span>Payment received and confirmed with Monnify: <b>'+naira(lastLive.amount_kobo)+'</b>. Thank you. Your receipt is below.</span></div>';
+  else if(result==="paid"||result==="pending") banner=infoBox("We are waiting for the payment provider to confirm your payment. This page checks again automatically; there is no need to pay twice.");
+  else if(result==="failed") banner=errBox("The payment was not completed. You can try again below.");
+  const status=n.settled?'<span class="pill ok">'+IC.check+'Settled</span>':'<span class="pill due">'+IC.alert+'Outstanding</span>';
+  res.innerHTML='<div class="pay-card">'+(banner?'<div class="result">'+banner+'</div>':"")
+    +'<div class="figs pay-figs" style="margin-top:16px">'
+      +'<div class="fig lead-cell"><div class="fig-label">Assessment Number</div><div class="fig-value lead num">'+esc(n.dn)+'</div>'
+        +'<div class="fig-sub"><b style="color:var(--fg)">'+esc(n.name)+'</b><br>'+esc(n.address)+'</div></div>'
+      +'<div class="fig"><div class="fig-label">TIRS TIN</div><div class="fig-value" style="font-size:18px">'+esc(n.ttin||"Not on record")+'</div><div class="fig-sub">'+esc(n.tax_year)+' Tax Year</div></div>'
+      +'<div class="fig"><div class="fig-label">Status</div><div class="fig-value">'+status+'</div><div class="fig-sub">Due '+esc(dateUS(n.due_date))+'</div></div>'
+      +'<div class="fig"><div class="fig-label">Amount assessed</div><div class="fig-value">'+naira(n.total_kobo)+'</div><div class="fig-sub">Assessed '+esc(dateUS(n.assessment_date))+'</div></div>'
+      +'<div class="fig"><div class="fig-label">'+(n.settled?"Balance":"Balance to pay")+'</div><div class="fig-value">'+naira(n.balance_kobo)+'</div><div class="fig-sub">'+naira(n.legacy_kobo+n.live_kobo)+' paid</div></div>'
+    +'</div>'
+    +(!n.settled&&n.payments_enabled
+      ?'<form class="pay-form" id="payform" novalidate><div class="field"><label for="pemail">Email address (optional)</label>'
+        +'<input class="input" id="pemail" type="email" autocomplete="email" placeholder="you@example.com"></div>'
+        +'<button class="btn btn-primary" type="submit" id="pgo">'+IC.lock+'Pay '+naira(n.balance_kobo)+' with Monnify</button></form>'
+        +'<p class="note">You will be taken to Monnify, the State\'s payment service, to pay by card, bank transfer or USSD. The amount is fixed to your notice. Your card details are entered on Monnify\'s page, never on this site.</p>'
+        +'<div id="payerr"></div>'
+      :"")
+    +(!n.settled&&!n.payments_enabled?'<p class="note">This notice has an outstanding balance of '+naira(n.balance_kobo)+', due '+esc(dateUS(n.due_date))+'. Online payment is not yet available on this platform.</p>':"")
+    +(counted.length?'<div class="pay-list"><h3 style="font-size:15px;font-weight:750">Payments received online</h3><div class="table-wrap"><table><thead><tr><th>Date paid</th><th>Channel</th><th>Monnify reference</th><th class="r">Amount</th><th></th></tr></thead><tbody>'
+      +counted.map((p,i)=>'<tr><td>'+esc(dateTimeWAT(p.paid_on))+'</td><td>'+esc(p.method)+'</td><td class="num">'+esc(p.transaction_reference)+'</td><td class="r strong">'+naira(p.amount_kobo)+'</td>'
+        +'<td><button class="btn btn-quiet" type="button" data-rcpt="'+i+'">'+IC.dl+'Receipt</button></td></tr>').join("")
+      +'</tbody></table></div></div>':"")
+    +'<div class="pay-actions">'
+      +(n.settled&&n.legacy_kobo>0&&n.live_kobo===0?'<button class="btn btn-primary" id="pstmt" type="button">'+IC.dl+'Download statement</button>':"")
+      +'<a class="btn btn-quiet" href="#/notice/'+encodeURIComponent(n.dn)+'">View demand notice</a></div>'
+    +(n.settled&&n.legacy_kobo>0&&n.live_kobo===0?'<p class="note">This notice is settled: the collections recorded for '+esc(n.tax_year)+' in the consolidated revenue return cover the full assessment.</p>':"")
+  +'</div>';
+  const form=res.querySelector("#payform");
+  if(form) form.onsubmit=async e=>{
+    e.preventDefault();
+    const btn=res.querySelector("#pgo"), em=res.querySelector("#pemail"), out=res.querySelector("#payerr");
+    const label=btn.innerHTML; btn.disabled=true; btn.innerHTML=IC.lock+"Connecting to Monnify…"; out.innerHTML="";
+    const r=await api("/api/pay/start",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({q:n.dn,email:em.value.trim()})});
+    const url=r.ok&&r.data.checkoutUrl||"";
+    // only ever hand the taxpayer to an HTTPS checkout (plain http is allowed for local testing on localhost)
+    const safe=/^https:\/\//.test(url)||(location.hostname==="localhost"&&/^http:\/\/localhost[:/]/.test(url));
+    if(safe){location.assign(url);return}
+    btn.disabled=false; btn.innerHTML=label; out.innerHTML=errBox(r.data.error||"The payment could not be started. Please try again.");
+  };
+  res.querySelectorAll("[data-rcpt]").forEach(b=>b.onclick=async()=>{
+    const p=counted[+b.dataset.rcpt];
+    const r=await api("/api/receipt?ref="+encodeURIComponent(p.transaction_reference)+"&t="+encodeURIComponent(p.receipt_token));
+    if(r.ok) downloadReceipt(r.data,b); else alert(r.data.error||"The receipt could not be loaded.");
+  });
+  const st=res.querySelector("#pstmt"); if(st) st.onclick=()=>downloadStatement(n,st);
+  // waiting for confirmation: re-check every 5 seconds for up to 2 minutes
+  if((result==="paid"&&!lastLive)||result==="pending"){
+    if(polls<24) pollTimer=setTimeout(async()=>{
+      const r=await api("/api/notice?q="+encodeURIComponent(n.dn));
+      if(r.ok){const got=r.data.payments.filter(p=>p.receipt_token).length>counted.length;
+        drawPayCard(res,r.data,got?"paid":result,polls+1);}
+    },5000);
+  }
+}
+
+/* ---------- notice ---------- */
+async function renderNotice(q){
+  setBand("Demand notice","Your Consolidated Demand Notice. Print it, or pay it online.");
+  view.innerHTML='<div class="sk" style="height:300px;margin-top:22px"></div>';
+  const {ok,data:n}=await api("/api/notice?q="+encodeURIComponent(q||""));
+  if(!ok){view.innerHTML=searchForm(q)+errBox(n.error||"Something went wrong.");bindSearch();return}
+  const fees=n.fee_heads; let rows="";
+  n.heads.forEach((h,i)=>{
+    if(i===fees) rows+='<tr class="subtotal"><td></td><td>Sub-total fees</td><td class="r">'+nf2.format(n.subtotal_kobo/100)+'</td></tr>';
+    rows+='<tr><td>'+(i+1)+'</td><td>'+esc(h.name)+'</td><td class="r">'+nf2.format(h.amount_kobo/100)+'</td></tr>';
+  });
+  rows+='<tr class="grand"><td></td><td>Total</td><td class="r">₦'+nf2.format(n.total_kobo/100)+'</td></tr>';
+  view.innerHTML=
+    '<div class="notice-bar no-print"><a class="btn btn-quiet btn-sm" href="#/pay/'+encodeURIComponent(n.dn)+'">'+IC.back+'Payment page</a>'
+      +'<div class="actions"><button class="btn btn-primary" id="nprint" type="button">'+IC.print+'Print notice</button></div></div>'
+    +'<article class="paper" aria-label="Assessment notice">'
+      +'<header class="doc-head"><img src="'+sealSrc()+'" alt="Taraba State coat of arms">'
+        +'<div class="doc-title"><h2>'+esc(BILLING.name)+'</h2><div class="svc">'+esc(BILLING.address)+'<br>'+esc(BILLING.tel)+'</div></div>'
+        +'<a class="doc-qr" href="#/pay/'+encodeURIComponent(n.dn)+'" aria-label="Open the payment page for this notice">'+qrSvg(payUrl(n.dn),"Scan to pay notice "+n.dn)+'</a></header>'
+      +'<dl class="doc-meta">'
+        +'<div><dt>Assessment Date</dt><dd>'+esc(dateUS(n.assessment_date))+'</dd></div>'
+        +'<div class="right"><dt>Due Date</dt><dd>'+esc(dateUS(n.due_date))+'</dd></div>'
+        +'<div><dt>TIRS TIN</dt><dd>'+esc(n.ttin||"Not on record")+'</dd></div>'
+        +'<div class="right"><dt>Assessment Number</dt><dd>'+esc(n.dn)+'</dd></div>'
+      +'</dl>'
+      +'<div class="doc-to"><b>'+esc(n.name)+'</b><span>'+esc(n.address)+'</span></div>'
+      +'<div class="doc-letter"><p class="salute">Dear Esteemed Taxpayer,</p>'
+        +'<p>In line with the provisions of the Taraba State Presumptive Tax and Revenue Harmonisation Law, 2025 and other enabling laws, we write to present your organization\'s obligation due to Taraba State Government for '+esc(n.tax_year)+' Tax Year with respect to the under listed revenue items:</p></div>'
+      +'<h3 class="doc-h">ASSESSMENT NOTICE FEES &amp; LEVIES</h3>'
+      +'<div class="table-wrap"><table class="doc-table"><thead><tr><th style="width:44px">#</th><th>Revenue head</th><th class="r">Amount (₦)</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+      +'<p class="doc-words">Total in words: <i>'+esc(noticeWords(n.total_kobo))+'</i></p>'
+      +'<div class="doc-letter">'
+        +'<p>You are required to pay the established levies in the sum above within 30 days from the date of the receipt of this notice.</p>'
+        +'<h4>How to Pay</h4><p>This assessment notice can be paid by scanning the QR Code on this document or via the payment portal on <a href="'+SITE+'#/pay">'+esc(location.host)+'</a></p>'
+        +'<h4>Objection</h4><p>Note that you have the right of objection within the 30 (Thirty) days\' notice period, after which the forward Payment evidence of your conclusion. However, for the Objection to be valid, you are expected to forward Payment of Evidence of your undisputed position alongside your objection can be done via govpayhub.com</p>'
+        +'<p class="sign">Yours sincerely,<br>For: Taraba State Internal Revenue Service</p>'
+        +'<p class="sign">'+esc(BILLING.signatory)+'<br><b>'+esc(BILLING.title)+'</b></p>'
+      +'</div></article>';
+  view.querySelector("#nprint").onclick=()=>window.print();
+}
+
+/* ---------- receipt link and verification ---------- */
+async function renderReceipt(params){
+  setBand("Payment receipt","A receipt for a payment confirmed with Monnify.");
+  const r=await api("/api/receipt?ref="+encodeURIComponent(params.ref||"")+"&t="+encodeURIComponent(params.t||""));
+  if(!r.ok){view.innerHTML=errBox(r.data.error||"This receipt link is not valid.");return}
+  const rc=r.data.receipt;
+  view.innerHTML=sec("Payment confirmed")+infoBox('<b>'+naira(rc.amount_kobo)+'</b> paid on '+esc(dateTimeWAT(rc.paid_on))+' by '+esc(rc.method)+' for notice <b>'+esc(r.data.dn)+'</b>. Monnify reference '+esc(rc.transaction_reference)+'.')
+    +'<div class="pay-actions"><button class="btn btn-primary" id="rdl" type="button">'+IC.dl+'Download receipt</button><a class="btn btn-quiet" href="#/pay/'+encodeURIComponent(r.data.dn)+'">Payment page</a></div>';
+  const b=view.querySelector("#rdl"); b.onclick=()=>downloadReceipt(r.data,b);
+}
+async function renderVerify(params){
+  setBand("Verify a receipt","Check that a payment receipt was issued for a payment confirmed by the Taraba State Internal Revenue Service.");
+  const ref=params.ref||"";
+  view.innerHTML=sec("Receipt check")+'<form class="pay-search" id="vform" novalidate><div class="field"><label for="vq">Monnify transaction reference</label><div class="search">'+IC.search
+    +'<input class="input" id="vq" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. MNFY|67|20261020120000|000123" value="'+esc(ref)+'"></div></div><button class="btn btn-primary" type="submit">Check</button></form><div id="vres"></div>';
+  view.querySelector("#vform").onsubmit=e=>{e.preventDefault();const v=view.querySelector("#vq").value.trim();if(v)location.hash="#/verify?ref="+encodeURIComponent(v)};
+  if(!ref) return;
+  const r=await api("/api/verify?ref="+encodeURIComponent(ref)), out=view.querySelector("#vres");
+  if(!r.ok){out.innerHTML=errBox(r.data.error||"No payment with this reference is recorded.");return}
+  const v=r.data;
+  out.innerHTML='<div class="verify-card">'+(v.valid
+      ?'<div class="coverage" role="status">'+IC.check+'<span><b>Valid.</b> '+naira(v.amount_kobo)+' was paid on '+esc(dateTimeWAT(v.paid_on))+' by '+esc(v.method)+' against notice <b>'+esc(v.dn)+'</b> ('+esc(v.name)+'), '+esc(v.tax_year)+' tax year.</span></div>'
+      :errBox("This payment is recorded with status "+v.status+". A receipt for it is not valid."))+'</div>';
+}
+
+/* ---------- PDFs ---------- */
+function pdfFrame(doc,title,badge){
+  const W=doc.internal.pageSize.getWidth(), M=48, BAND=[11,61,46], INK=[23,23,23], MUTED=[107,106,103], GREEN=[23,116,74];
+  doc.addImage(sealSrc(),"PNG",M,M-8,52,52);
+  doc.setTextColor(...INK); doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.text(BILLING.name,M+64,M+8);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...MUTED);
+  doc.text(pdfSafe(BILLING.address),M+64,M+23); doc.text(pdfSafe(BILLING.tel),M+64,M+35);
+  doc.setDrawColor(...BAND); doc.setLineWidth(1.5); doc.line(M,M+56,W-M,M+56);
+  const y=M+86;
+  doc.setTextColor(...INK); doc.setFont("helvetica","bold"); doc.setFontSize(16); doc.text(title,M,y);
+  if(badge){doc.setDrawColor(...GREEN); doc.setTextColor(...GREEN); doc.setLineWidth(1.2); doc.roundedRect(W-M-96,y-16,96,22,4,4,"S");
+    doc.setFontSize(10); doc.text(badge,W-M-48,y-1,{align:"center"});}
+  return {W,M,BAND,INK,MUTED,y:y+30};
+}
+function pdfField(doc,f,label,val,x,yy,right){
+  doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...f.MUTED);doc.text(label,x,yy,right?{align:"right"}:undefined);
+  doc.setFont("helvetica","bold");doc.setFontSize(10.5);doc.setTextColor(...f.INK);doc.text(pdfSafe(val),x,yy+14,right?{align:"right"}:undefined);
+}
+function pdfHeads(doc,f,n,y){
+  const {W,M,BAND,INK}=f;
+  doc.setFillColor(...BAND); doc.rect(M,y,W-2*M,20,"F");
+  doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
+  doc.text("#",M+8,y+13); doc.text("REVENUE HEAD",M+34,y+13); doc.text("AMOUNT (NGN)",W-M-8,y+13,{align:"right"});
+  y+=20; doc.setFontSize(9.5);
+  const line=(num,label,amt,bold,shade)=>{
+    if(shade){doc.setFillColor(...shade); doc.rect(M,y,W-2*M,17,"F");}
+    doc.setTextColor(...INK); doc.setFont("helvetica",bold?"bold":"normal");
+    if(num) doc.text(String(num),M+8,y+12); doc.text(pdfSafe(label),M+34,y+12); doc.text(nf2.format(amt/100),W-M-8,y+12,{align:"right"});
+    doc.setDrawColor(233,232,229); doc.setLineWidth(0.5); doc.line(M,y+17,W-M,y+17); y+=17;
+  };
+  n.heads.forEach((h,i)=>{ if(i===n.fee_heads) line(0,"Sub-total fees",n.subtotal_kobo,true,[250,250,248]); line(i+1,h.name,h.amount_kobo); });
+  doc.setDrawColor(...BAND); doc.setLineWidth(1.2); doc.line(M,y,W-M,y);
+  line(0,"Total assessed",n.total_kobo,true,[243,246,244]);
+  return y;
+}
+function pdfFooter(doc,f,ref){
+  const H=doc.internal.pageSize.getHeight();
+  doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(...f.MUTED);
+  doc.text(pdfSafe(generatedLine()),f.M,H-30); doc.text(pdfSafe(ref),f.W-f.M,H-30,{align:"right"});
+}
+function withPdf(btn,fn){
+  if(!window.jspdf){alert("The PDF tool could not be loaded.");return}
+  const label=btn.innerHTML; btn.disabled=true;
+  setTimeout(()=>{try{fn(new window.jspdf.jsPDF({unit:"pt",format:"a4",compress:true}))}
+    catch(e){console.error(e);alert("The document could not be created: "+e.message)}
+    finally{btn.disabled=false;btn.innerHTML=label}},20);
+}
+/* A receipt only exists for a payment the server verified with Monnify. */
+function downloadReceipt(n,btn){
+  withPdf(btn,doc=>{
+    const rc=n.receipt, f=pdfFrame(doc,"PAYMENT RECEIPT","PAID"); let y=f.y;
+    pdfField(doc,f,"Assessment Number",n.dn,f.M,y); pdfField(doc,f,"TIRS TIN",n.ttin||"Not on record",f.W-f.M,y,true);
+    y+=34; pdfField(doc,f,"Monnify transaction reference",rc.transaction_reference,f.M,y); pdfField(doc,f,"TIRS payment reference",rc.payment_reference,f.W-f.M,y,true);
+    y+=34; pdfField(doc,f,"Date paid",dateTimeWAT(rc.paid_on),f.M,y); pdfField(doc,f,"Channel",rc.method+(rc.payer_account_last4?" (account ending "+rc.payer_account_last4+")":""),f.W-f.M,y,true);
+    y+=34; pdfField(doc,f,"Received from",n.name,f.M,y); pdfField(doc,f,"Tax Year",String(n.tax_year),f.W-f.M,y,true);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(...f.MUTED); doc.text(pdfSafe(n.address),f.M,y+28);
+    y=pdfHeads(doc,f,n,y+44)+16;
+    const row=(label,val,bold)=>{doc.setFont("helvetica",bold?"bold":"normal");doc.setFontSize(10.5);doc.setTextColor(...f.INK);doc.text(label,f.W-f.M-270,y);doc.text(val,f.W-f.M,y,{align:"right"});y+=16};
+    row("Amount paid (this payment)","NGN "+nf2.format(rc.amount_kobo/100),true);
+    row("Total paid to date","NGN "+nf2.format((n.legacy_kobo+n.live_kobo)/100),false);
+    row("Balance remaining","NGN "+nf2.format(n.balance_kobo/100),false);
+    y+=6; doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(...f.MUTED);
+    doc.text(doc.splitTextToSize(pdfSafe("Amount paid in words: "+noticeWords(rc.amount_kobo)),f.W-2*f.M),f.M,y); y+=26;
+    const conf=doc.splitTextToSize(pdfSafe("This payment was confirmed with Monnify by the Taraba State Internal Revenue Service on "+dateTimeWAT(rc.verified_at)+". Scan the code to check this receipt online."),f.W-2*f.M-110);
+    doc.text(conf,f.M,y); y+=conf.length*12;
+    // verification QR (vector, drawn from the QR matrix)
+    const q=qrcode(0,"M"); q.addData(verifyUrl(rc.transaction_reference)); q.make();
+    const cells=q.getModuleCount(), size=78, cell=size/cells, qx=f.W-f.M-size, qy=y-30;
+    doc.setFillColor(0,0,0); for(let r=0;r<cells;r++)for(let c=0;c<cells;c++)if(q.isDark(r,c))doc.rect(qx+c*cell,qy+r*cell,cell,cell,"F");
+    y+=60; doc.setTextColor(...f.INK); doc.setFontSize(10); doc.text("For: Taraba State Internal Revenue Service",f.M,y);
+    pdfFooter(doc,f,rc.transaction_reference);
+    doc.save("TIRS_Receipt_"+n.dn+"_"+rc.payment_reference.split("-").pop()+".pdf");
+  });
+}
+/* The 2025 return records collections without any payment instrument: a statement, not a receipt. */
+function downloadStatement(n,btn){
+  withPdf(btn,doc=>{
+    const f=pdfFrame(doc,"STATEMENT OF "+n.tax_year+" COLLECTIONS","SETTLED"); let y=f.y;
+    pdfField(doc,f,"Assessment Number",n.dn,f.M,y); pdfField(doc,f,"TIRS TIN",n.ttin||"Not on record",f.W-f.M,y,true);
+    y+=34; pdfField(doc,f,"Tax Year",String(n.tax_year),f.M,y); pdfField(doc,f,"Assessment Date",dateUS(n.assessment_date),f.W-f.M,y,true);
+    y+=34; pdfField(doc,f,"Taxpayer",n.name,f.M,y);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(...f.MUTED); doc.text(pdfSafe(n.address),f.M,y+28);
+    y=pdfHeads(doc,f,n,y+44)+16;
+    const row=(label,val,bold)=>{doc.setFont("helvetica",bold?"bold":"normal");doc.setFontSize(10.5);doc.setTextColor(...f.INK);doc.text(label,f.W-f.M-270,y);doc.text(val,f.W-f.M,y,{align:"right"});y+=16};
+    row("Collected ("+n.tax_year+" return)","NGN "+nf2.format(n.legacy_kobo/100),true);
+    row("Balance","NGN "+nf2.format(n.balance_kobo/100),false);
+    y+=10; doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(...f.MUTED);
+    doc.text(doc.splitTextToSize(pdfSafe("Our records show this assessment as fully settled from collections recorded in the "+n.tax_year+" consolidated revenue return. This is a statement of account, not a payment receipt."),f.W-2*f.M),f.M,y);
+    y+=50; doc.setTextColor(...f.INK); doc.setFontSize(10); doc.text("For: Taraba State Internal Revenue Service",f.M,y);
+    pdfFooter(doc,f,n.dn);
+    doc.save("TIRS_Statement_"+n.dn+".pdf");
+  });
+}
+
+/* ---------- router ---------- */
+function parse(){
+  const h=location.hash.replace(/^#\/?/,""), [path,qs]=h.split("?"), parts=path.split("/").filter(Boolean);
+  const params={}; (qs||"").split("&").forEach(kv=>{if(!kv)return;const i=kv.indexOf("=");params[decodeURIComponent(i<0?kv:kv.slice(0,i))]=decodeURIComponent(i<0?"":kv.slice(i+1).replace(/\+/g," "))});
+  return {name:parts[0]||"pay",arg:parts[1]?decodeURIComponent(parts[1]):null,params};
+}
+function route(){
+  const {name,arg,params}=parse();
+  window.scrollTo(0,0);
+  if(name==="notice") renderNotice(arg);
+  else if(name==="receipt") renderReceipt(params);
+  else if(name==="verify") renderVerify(params);
+  else renderPay(arg?arg.toUpperCase():null,params);
+}
+window.addEventListener("hashchange",route);
+route();
+})();
+</script>
+</body>
+</html>

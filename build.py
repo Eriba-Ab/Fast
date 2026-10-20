@@ -27,8 +27,15 @@ ROOT = Path(__file__).resolve().parent
 DEFAULT_WORKBOOK = ROOT / "Taraba State_Consolidated Revenue Collections Report_2025.xlsx"
 TEMPLATE = ROOT / "src" / "template.html"
 OUTPUT = ROOT / "taraba-billing.html"
+PUBLIC_TEMPLATE = ROOT / "src" / "public.html"
+BUILD = ROOT / "build"
 SEAL = ROOT / "Taraba_State_Coat_of_Arms.png"
 JSPDF = ROOT / "assets" / "jspdf.umd.min.js"  # PDF export library, inlined so it works offline
+QRCODE = ROOT / "assets" / "qrcode.js"  # QR code generator (qrcode-generator 1.4.4, MIT), inlined
+
+# Demand notices: one assessment date for the tax year (the notice text allows 30 days to pay).
+ASSESSMENT_DATE = datetime.date(2025, 12, 23)
+PAYMENT_DAYS = 30
 FONTS = {"__FONT_LATIN__": ROOT / "assets" / "nunito-latin.woff2",
          "__FONT_LATIN_EXT__": ROOT / "assets" / "nunito-latin-ext.woff2"}
 
@@ -68,6 +75,10 @@ FIELDS = {
     "lga": "lga",
     "business address": "addr",
     "phone number": "phone",
+    "taraba tax identification number": "tin",
+    "tirs tin": "tin",
+    "ttin": "tin",
+    "tin": "tin",
     "business size": "size",
     "sub-total fees": "sub",
     "total harmonized assessment": "total",
@@ -141,6 +152,16 @@ def read_design(workbook_path):
         return out
 
     h, d = cells(row1), cells(row2)
+    # a column's data style is its most common style across the sampled rows, not just row 2
+    from collections import Counter
+    votes = {}
+    for m in re.finditer(r'<row\b[^>]*\br="(\d+)"[^>]*>(.*?)</row>', head, re.S):
+        if m.group(1) == "1":
+            continue
+        for c in re.finditer(r'<c\b[^>]*?\br="([A-Z]+)\d+"([^>]*?)(?:/>|>)', m.group(2)):
+            votes.setdefault(col_index(c.group(1)), Counter())[int(attr(c.group(2), "s", "0"))] += 1
+    for i, v in votes.items():
+        d.setdefault(i, {"s": 0, "f": None})["s"] = v.most_common(1)[0][0]
     width = max(list(h) + list(d) + [0]) + 1
     return {
         "styles": z.read("xl/styles.xml").decode("utf-8"),
@@ -156,6 +177,17 @@ def read_design(workbook_path):
         "dataS": [d.get(i, {}).get("s", 0) for i in range(width)],
         "formulas": [d.get(i, {}).get("f") for i in range(width)],
     }
+
+
+def demand_notice_number(reg_id, year):
+    """A stable 15-digit notice number per business and tax year, in the GovPayHub style
+    (DN + 15 digits): year, class digit, registration serial, five check digits."""
+    import hashlib
+    parts = reg_id.split("/")
+    klass = {"INST": "1", "MSME": "2"}.get(parts[1] if len(parts) > 1 else "", "9")
+    serial = int(re.sub(r"\D", "", parts[-1]) or 0) % 100000
+    check = int(hashlib.sha256(f"{reg_id}|{year}".encode()).hexdigest(), 16) % 100000
+    return f"DN{year}{klass}{serial:05d}{check:05d}"
 
 
 def load(workbook_path):
@@ -198,7 +230,7 @@ def load(workbook_path):
     c_heads = [col[f"head:{h}"] for h in range(len(heads_present))]
 
     lgas, cats, entities = [], [], []
-    out = {k: [] for k in ("id", "name", "lga", "addr", "phone", "cat", "size", "cls", "total")}
+    out = {k: [] for k in ("id", "tin", "name", "lga", "addr", "phone", "cat", "size", "cls", "total")}
     heads_flat, pay_flat = [], []
     numeric_phones = text_phones = 0
     checks = {"sub": 0, "billed": 0, "rounding": 0}
@@ -228,6 +260,7 @@ def load(workbook_path):
         if sum(pay) != total:
             checks["rounding"] += 1
         out["id"].append(rid)
+        out["tin"].append(clean(r[col["tin"]]) if "tin" in col else "")
         out["name"].append(clean(r[col["name"]]))
         out["lga"].append(lga)
         out["addr"].append(clean(r[col["addr"]]))
@@ -253,6 +286,13 @@ def load(workbook_path):
     out["heads"] = heads_flat
     out["pay"] = pay_flat
     count = len(out["id"])
+    year = int(month_cols[0][1][:4])
+    out["dn"] = [demand_notice_number(i, year) for i in out["id"]]
+    if len(set(out["dn"])) != count:
+        raise SystemExit("Generated demand notice numbers are not unique.")
+    blank_tin = sum(1 for t in out["tin"] if not t)
+    if "tin" in col and blank_tin:
+        print(f"  note: {blank_tin:,} businesses have no TIRS TIN")
     layout = {"key": "stat", "title": "Statutory breakdown", "sheet": ws.title,
               "headers": raw_header, "fields": fields, "rows": list(range(count)),
               "phoneNumeric": numeric_phones > text_phones, "design": read_design(workbook_path)}
@@ -261,6 +301,9 @@ def load(workbook_path):
         print("  formulas kept in the statutory breakdown: " + "; ".join(formulas))
     return {
         "source": Path(workbook_path).name,
+        "taxYear": year,
+        "assessmentDate": ASSESSMENT_DATE.isoformat(),
+        "dueDate": (ASSESSMENT_DATE + datetime.timedelta(days=PAYMENT_DAYS)).isoformat(),
         "built": datetime.date.today().isoformat(),
         "months": [m for _, m in month_cols],
         "lgas": lgas,
@@ -273,6 +316,46 @@ def load(workbook_path):
         "cols": out,
         "stat": [layout],
     }
+
+
+def write_export(data, workbook):
+    """Every notice, flattened, for the payment server's database."""
+    c, M, H = data["cols"], len(data["months"]), len(data["heads"])
+    rows = []
+    for r in range(data["count"]):
+        heads = c["heads"][r * H:(r + 1) * H]
+        rows.append({
+            "dn": c["dn"][r], "reg_id": c["id"][r], "ttin": c["tin"][r], "name": c["name"][r],
+            "entity": data["entities"][c["cls"][r]], "category": data["cats"][c["cat"][r]],
+            "lga": data["lgas"][c["lga"][r]], "size": data["sizes"][c["size"][r]],
+            "address": c["addr"][r], "phone": c["phone"][r],
+            "heads": heads, "subtotal": sum(heads[:FEE_HEADS]), "total": c["total"][r],
+            "pay": c["pay"][r * M:(r + 1) * M],
+        })
+    export = {"source": Path(workbook).name, "built": data["built"], "taxYear": data["taxYear"],
+              "assessmentDate": data["assessmentDate"], "dueDate": data["dueDate"],
+              "months": data["months"], "heads": data["heads"], "feeHeads": FEE_HEADS, "rows": rows}
+    out = BUILD / "data" / "assessments.json.gz"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_bytes(gzip.compress(json.dumps(export, separators=(",", ":")).encode("utf-8"), 9))
+    print(f"Wrote build/data/{out.name} ({out.stat().st_size / 1e6:.1f} MB, {len(rows):,} notices)")
+
+
+def write_public_site(staff_html):
+    """The public page reuses the staff console's stylesheet (with its fonts already
+    inlined) so both look identical, but carries no taxpayer data."""
+    style = re.search(r"<style>.*?</style>", staff_html, re.S).group(0)
+    page = PUBLIC_TEMPLATE.read_text(encoding="utf-8")
+    page = page.replace("__STYLE__", style)
+    page = page.replace("__SEAL__", base64.b64encode(SEAL.read_bytes()).decode("ascii"))
+    page = page.replace("__JSPDF__", JSPDF.read_text(encoding="utf-8"))
+    page = page.replace("__QRCODE__", QRCODE.read_text(encoding="utf-8"))
+    out = BUILD / "site" / "index.html"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(page, encoding="utf-8")
+    if "__DATA_GZ_B64__" in page or "TR/MSME/" in page:
+        raise SystemExit("The public page must not contain registry data.")
+    print(f"Wrote build/site/{out.name} ({out.stat().st_size / 1e3:.0f} KB, no taxpayer data)")
 
 
 def main():
@@ -289,7 +372,17 @@ def main():
     for token, path in FONTS.items():
         html = html.replace(token, base64.b64encode(path.read_bytes()).decode("ascii"))
     html = html.replace("__JSPDF__", JSPDF.read_text(encoding="utf-8"))
+    html = html.replace("__QRCODE__", QRCODE.read_text(encoding="utf-8"))
     OUTPUT.write_text(html, encoding="utf-8")
+
+    # --- payment server artefacts (see server/ and deploy/) -------------------
+    # build/staff/  the staff console, served only to signed-in officers
+    # build/site/   the public page: one notice at a time from the API, no registry inside
+    # build/data/   the assessments export the server loads with `python -m app.cli sync`
+    (BUILD / "staff").mkdir(parents=True, exist_ok=True)
+    (BUILD / "staff" / OUTPUT.name).write_text(html, encoding="utf-8")
+    write_export(data, workbook)
+    write_public_site(html)
 
     paid = sum(data["cols"]["pay"]) / 100
     assessed = sum(data["cols"]["total"]) / 100

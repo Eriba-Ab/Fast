@@ -1,2 +1,15 @@
 # Local Netlify folder
 .netlify
+
+# Secrets: never commit. The real values live only on the VPS in deploy/.env.
+deploy/.env
+.env
+
+# Build outputs: the staff console and the data export contain every taxpayer's
+# name, address and phone number. They are rebuilt from the workbook by build.py.
+build/
+
+# Python / test leftovers
+__pycache__/
+*.pyc
+.pytest_cache/

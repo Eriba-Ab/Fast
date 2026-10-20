@@ -1,0 +1,74 @@
+# LOCAL TESTING ONLY: the app, worker and database, plus a stand-in for Monnify.
+# No HTTPS, no real Monnify, nothing reachable from outside this computer.
+#   docker compose -f deploy/docker-compose.local.yml up -d --build
+#   docker compose -f deploy/docker-compose.local.yml exec app python -m app.cli sync --sandbox-unpaid
+#   open http://localhost:8000
+name: tirs-local
+
+x-env: &env
+  DATABASE_URL: postgresql://tirs:localtest@db:5432/tirs
+  APP_SECRET: local-test-secret-not-for-production-0123456789abcdef
+  PUBLIC_BASE_URL: http://localhost:8000
+  PAYMENTS_ENABLED: "true"
+  MONNIFY_ENV: sandbox
+  MONNIFY_BASE_URL: http://fake-monnify:8099
+  MONNIFY_API_KEY: MK_TEST_LOCAL
+  MONNIFY_SECRET_KEY: SK_TEST_LOCAL
+  MONNIFY_CONTRACT_CODE: "0000000000"
+  MONNIFY_WEBHOOK_IP: 127.0.0.1
+  COOKIE_SECURE: "false"
+
+x-app: &app
+  build: ../server
+  environment: *env
+  volumes:
+    - ../build/site:/srv/site:ro
+    - ../build/staff:/srv/staff:ro
+    - ../build/data:/srv/data:ro
+    - ../server/tests:/srv/app/tests:ro
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tirs
+      POSTGRES_USER: tirs
+      POSTGRES_PASSWORD: localtest
+    ports:
+      - "127.0.0.1:55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tirs -d tirs"]
+      interval: 3s
+      retries: 30
+
+  app:
+    <<: *app
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  worker:
+    <<: *app
+    command: ["python", "-m", "app.worker"]
+
+  fake-monnify:
+    build: ../server
+    command: ["uvicorn", "tests.fake_monnify:app", "--host", "0.0.0.0", "--port", "8099"]
+    volumes:
+      - ../server/tests:/srv/app/tests:ro
+    environment:
+      FAKE_PUBLIC_URL: http://localhost:8099
+      WEBHOOK_URL: http://app:8000/api/monnify/webhook
+    ports:
+      - "127.0.0.1:8099:8099"
+
+  tests:
+    <<: *app
+    user: root
+    profiles: ["tests"]
+    environment:
+      <<: *env
+      TEST_DATABASE_URL: postgresql://tirs:localtest@db:5432/tirs_test
+    command: ["sh", "-c", "pip install -q pytest && python -m pytest -q -p no:cacheprovider tests"]

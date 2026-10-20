@@ -1,0 +1,63 @@
+# Taraba Central Billing and Collections on a VPS.
+#   1. cp .env.example .env   and fill it in
+#   2. docker compose up -d --build
+# See deploy/README.md for the full checklist.
+name: tirs
+
+x-app: &app
+  build: ../server
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql://tirs:${POSTGRES_PASSWORD}@db:5432/tirs
+  volumes:
+    - ../build/site:/srv/site:ro       # public page (no taxpayer data)
+    - ../build/staff:/srv/staff:ro     # staff console (served only after sign-in)
+    - ../build/data:/srv/data:ro       # assessments export for `app.cli sync`
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tirs
+      POSTGRES_USER: tirs
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tirs -d tirs"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    <<: *app
+
+  worker:
+    <<: *app
+    command: ["python", "-m", "app.worker"]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

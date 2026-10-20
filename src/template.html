@@ -340,6 +340,26 @@ td .sub .pill{margin-top:3px;padding:1px 8px 1px 6px}
 .doc-status b{display:block;margin-top:2px;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
 .doc-status .ok b{color:var(--pos)}
 .doc-status .due b{color:var(--neg)}
+.doc-title h2{letter-spacing:.01em}
+.doc-qr{display:block;width:96px;height:96px;color:#000}
+.doc-qr svg{width:96px;height:96px;display:block}
+.doc-meta .right{text-align:right}
+.doc-to{padding:2px 0 18px;display:grid;gap:3px}
+.doc-to b{font-size:15px;font-weight:750;color:var(--fg)}
+.doc-to span{font-size:14px;color:var(--fg-3);font-weight:600}
+.doc-letter{font-size:14px;line-height:1.6;color:var(--fg-2);font-weight:550}
+.doc-letter p{margin:0 0 12px;max-width:72ch}
+.doc-letter .salute{font-size:15px;color:var(--fg);font-weight:650}
+.doc-letter h4{margin:18px 0 4px;font-size:14px;font-weight:800;color:var(--fg)}
+.doc-letter .sign{margin-top:22px;color:var(--fg)}
+.doc-words{margin-bottom:18px}
+.pay-search{display:grid;grid-template-columns:minmax(0,520px) max-content;justify-content:start;gap:10px;align-items:end;margin-top:20px}
+.pay-card{margin-top:22px}
+.pay-figs{grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr))}
+.pay-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:18px}
+.pay-qr{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;font-weight:650;color:var(--fg-3)}
+.pay-qr svg{width:84px;height:84px;display:block}
+@media (max-width:640px){.pay-search{grid-template-columns:1fr}.pay-qr{margin-left:0}.doc-qr,.doc-qr svg{width:72px;height:72px}}
 .doc-foot{margin-top:26px;padding-top:14px;border-top:1px solid var(--border);font-size:12.5px;color:var(--fg-3);font-weight:600;line-height:1.55;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .doc-note{margin-top:10px;font-size:12.5px;color:var(--fg-3);font-weight:600}
 
@@ -469,6 +489,7 @@ td .sub .pill{margin-top:3px;padding:1px 8px 1px 6px}
           <h3>Billing</h3>
           <a class="nav-link" href="#/registry" data-route="registry"><svg class="i" viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6M9 11h.01M15 11h.01"/></svg>Taxpayer registry</a>
           <a class="nav-link" href="#/notice" data-route="notice"><svg class="i" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>Demand notices</a>
+          <a class="nav-link" href="#/pay" data-route="pay"><svg class="i" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6.5 15h4"/></svg>Pay demand notices</a>
         </section>
         <section>
           <h3>Reporting</h3>
@@ -492,6 +513,8 @@ td .sub .pill{margin-top:3px;padding:1px 8px 1px 6px}
 <script id="data" type="application/octet-stream">__DATA_GZ_B64__</script>
 <script>/* jsPDF 2.5.2, MIT licence, https://github.com/parallax/jsPDF */
 __JSPDF__</script>
+<script>/* qrcode-generator 1.4.4, MIT licence, Kazuhiko Arase */
+__QRCODE__</script>
 <script>
 "use strict";
 (function(){
@@ -563,6 +586,11 @@ const IC={
   sort:'<svg class="sort-ic" viewBox="0 0 10 14" fill="currentColor"><path d="M5 1 9 6H1zM5 13 1 8h8z"/></svg>',
   sortAsc:'<svg class="sort-ic" viewBox="0 0 10 14" fill="currentColor"><path d="M5 3 9 9H1z"/></svg>',
   sortDesc:'<svg class="sort-ic" viewBox="0 0 10 14" fill="currentColor"><path d="M5 11 1 5h8z"/></svg>',
+  card:'<svg class="i" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>',
+  bank:'<svg class="i" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v2H3zm2 4h2v6H5zm5 0h2v6h-2zm5 0h2v6h-2zm-9 8h16v2H3z"/></svg>',
+  phone:'<svg class="i" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M12 18h.01"/></svg>',
+  lock:'<svg class="i" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  copy:'<svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
 };
 
 /* =========================================================================
@@ -597,11 +625,14 @@ function prepare(raw){
   for(let r=0;r<N;r++)for(let m=0;m<M;m++)monthTotal[m]+=pay[r*M+m];
   const years=[...new Set(raw.months.map(m=>+m.slice(0,4)))];
   const byId=new Map(); c.id.forEach((id,i)=>byId.set(id,i));
+  const tin=c.tin||c.id.map(()=>""), dn=c.dn||c.id.map(()=>"");
+  const byKey=new Map(); for(let r=0;r<N;r++){byKey.set(dn[r].toUpperCase(),r); if(tin[r]) byKey.set(tin[r].toUpperCase(),r); byKey.set(c.id[r].toUpperCase(),r)}
   const hay=new Array(N);
-  for(let r=0;r<N;r++) hay[r]=(c.id[r]+" "+c.name[r]+" "+c.addr[r]+" "+c.phone[r]+" "+raw.lgas[c.lga[r]]).toLowerCase();
+  for(let r=0;r<N;r++) hay[r]=(c.id[r]+" "+dn[r]+" "+tin[r]+" "+c.name[r]+" "+c.addr[r]+" "+c.phone[r]+" "+raw.lgas[c.lga[r]]).toLowerCase();
   const assessed=c.total.reduce((a,b)=>a+b,0);
-  return {...raw,N,M,H,pay,headAmt,cls,classes,headSum,paidAll,monthTotal,years,byId,hay,assessed,
-    lga:c.lga,cat:c.cat,size:c.size,total:c.total,id:c.id,name:c.name,entities:classKeys,addr:c.addr,phone:c.phone,stat:raw.stat||[]};
+
+  return {...raw,cols:c,N,M,H,pay,headAmt,cls,classes,headSum,paidAll,monthTotal,years,byId,hay,assessed,
+    lga:c.lga,cat:c.cat,size:c.size,total:c.total,id:c.id,tin,dn,byKey,name:c.name,entities:classKeys,addr:c.addr,phone:c.phone,stat:raw.stat||[]};
 }
 
 /* Aggregate a set of month indexes over rows passing `keep` */
@@ -653,11 +684,6 @@ function spanLabel(mIdx){
   const a=D.months[mIdx[0]], b=D.months[mIdx[mIdx.length-1]];
   if(mIdx.length===1) return monthLong(a);
   return monthShort(a)+" "+a.slice(0,4)+" – "+monthShort(b)+" "+b.slice(0,4);
-}
-function previousScope(sc){
-  if(sc.kind==="month") return sc.month>0?{kind:"month",month:sc.month-1}:null;
-  if(sc.kind==="year") return D.years.includes(sc.year-1)?{kind:"year",year:sc.year-1}:null;
-  return null;
 }
 function rangeOf(mIdx){
   const a=mKey(D.months[mIdx[0]]), b=mKey(D.months[mIdx[mIdx.length-1]]);
@@ -734,7 +760,6 @@ function niceStep(max,ticks){
 function renderDashboard(){
   const sc=state.scope, mIdx=scopeMonths(sc);
   const A=aggregate(mIdx);
-  const prev=previousScope(sc), P=prev?aggregate(scopeMonths(prev)):null;
   const period=scopeLabel(sc);
   const yearMonths=sc.kind==="all"?D.months.map((_,i)=>i):D.months.map((m,i)=>+m.slice(0,4)===(sc.kind==="year"?sc.year:+D.months[sc.month].slice(0,4))?i:-1).filter(i=>i>=0);
 
@@ -787,11 +812,7 @@ function renderDashboard(){
   });
 
   /* figures */
-  let delta='<div class="fig-value muted-val">–</div><div class="fig-sub">'+(sc.kind==="all"?"Covers every month on record":"No earlier "+(sc.kind==="year"?"year":"month")+" on record")+'</div>';
-  if(P){
-    const d=A.total-P.total, r=P.total?d/P.total*100:0, dir=d>0?"up":d<0?"down":"flat";
-    delta='<div class="fig-value"><span class="delta '+dir+'">'+IC[dir]+(r>0?"+":r<0?"−":"")+Math.abs(r).toFixed(1)+'%</span></div><div class="fig-sub">'+compact(Math.abs(d))+' '+(d>=0?"more":"less")+' than '+esc(scopeLabel(prev))+'</div>';
-  }
+  let topLga=0; for(let i=1;i<D.lgas.length;i++) if(A.lga[i]>A.lga[topLga]) topLga=i;
   const years=[...new Set(mIdx.map(i=>D.months[i].slice(0,4)))].join(", ");
   const rng=rangeOf(mIdx);
   const figs=
@@ -799,7 +820,7 @@ function renderDashboard(){
     +'<div class="fig lead-cell"><div class="fig-label">Collected, '+esc(period)+'</div><div class="fig-value lead num">'+naira(A.total)+'</div><div class="fig-sub">'+esc(dayLong(rng.from))+' to '+esc(dayLong(rng.to))+'</div></div>'
     +'<div class="fig"><div class="fig-label">Businesses paying</div><div class="fig-value">'+int(A.paying)+'</div><div class="fig-sub">of '+int(D.N)+' registered ('+pct(A.paying,D.N)+')</div></div>'
     +'<div class="fig"><div class="fig-label">Average payment</div><div class="fig-value">'+naira(A.paying?A.total/A.paying:0)+'</div><div class="fig-sub">per paying business</div></div>'
-    +'<div class="fig"><div class="fig-label">'+(P?"Change on "+esc(scopeLabel(prev)):"Change on previous period")+'</div>'+delta+'</div>'
+    +'<div class="fig"><div class="fig-label">Top LGA</div><div class="fig-value">'+(A.total?esc(D.lgas[topLga]):"–")+'</div><div class="fig-sub">'+(A.total?compact(A.lga[topLga])+' collected ('+pct(A.lga[topLga],A.total)+' of the total)':"No collections in this period")+'</div></div>'
     +'<div class="fig"><div class="fig-label">Share of assessment</div><div class="fig-value">'+pct(A.total,D.assessed)+'</div><div class="fig-sub">of '+compact(D.assessed)+' assessed for '+esc(years)+'</div></div>'
     +'</div>';
 
@@ -927,22 +948,49 @@ function drawRegistry(){
 }
 
 /* =========================================================================
-   Demand notice
+   Demand notice (wording follows the Taraba State Central Billing System notice)
    ========================================================================= */
+const BILLING={
+  name:"TARABA STATE CENTRAL BILLING SYSTEM",
+  address:"No. 56 Hammaruwa way, Jalingo, Taraba state",
+  tel:"Tel: +234 812 766 7894",
+  signatory:"Brigadier General Jeremiah Aliyu Faransa (Rtd).",
+  title:"Executive Chairman",
+};
+/* The payment site is this platform's own "Pay demand notices" page on taraba.govpayhub.com */
+const PAY_SITE="https://taraba.govpayhub.com/";
+const payUrl=dn=>PAY_SITE+"#/pay/"+encodeURIComponent(dn);
+const isSettled=r=>D.total[r]-D.paidAll[r]<=ROUNDING;
+function qrSvg(text,label){
+  if(typeof qrcode!=="function") return "";
+  const q=qrcode(0,"M"); q.addData(text); q.make();
+  return q.createSvgTag({cellSize:4,margin:0,scalable:true,alt:label||"QR code",title:label||""});
+}
+/* "Ninety Seven Thousand Naira Only" */
+function noticeWords(k){
+  const t=s=>s.replace(/-/g," ").replace(/\b([a-z])/g,(m,c)=>c.toUpperCase()).replace(/\bAnd\b/g,"and");
+  const n=Math.floor(k/100), kb=k%100;
+  return t(words(n))+" Naira"+(kb?", "+t(words(kb))+" Kobo":"")+" Only";
+}
+function findNotice(q){
+  const key=String(q||"").trim().toUpperCase();
+  return key?D.byKey.get(key):undefined;
+}
 function lookupMatches(q){
   q=q.trim().toLowerCase(); if(!q) return [];
   const terms=q.split(/\s+/), out=[];
   for(let r=0;r<D.N&&out.length<8;r++){const h=D.hay[r];if(terms.every(t=>h.indexOf(t)>=0))out.push(r)}
   return out;
 }
-function bindLookup(input,list){
+function bindLookup(input,list,hrefFor){
+  hrefFor=hrefFor||(r=>noticeHref(D.id[r]));
   let act=-1, items=[];
   const draw=()=>{
     items=lookupMatches(input.value); act=-1;
     if(!input.value.trim()){list.hidden=true;return}
     list.hidden=false;
-    list.innerHTML=items.length?items.map((r,i)=>'<li><a href="'+noticeHref(D.id[r])+'" data-i="'+i+'"><b>'+esc(D.name[r])+'</b><small>'+esc(D.id[r])+' · '+esc(D.lgas[D.lga[r]])+' · '+esc(D.cats[D.cat[r]])+'</small></a></li>').join("")
-      :'<li style="padding:10px 12px;color:var(--fg-3);font-weight:600;font-size:14px">No taxpayer matches “'+esc(input.value)+'”. Try the ID number or part of the business name.</li>';
+    list.innerHTML=items.length?items.map((r,i)=>'<li><a href="'+hrefFor(r)+'" data-i="'+i+'"><b>'+esc(D.name[r])+'</b><small>'+esc(D.dn[r])+' · '+esc(D.tin[r]||D.id[r])+' · '+esc(D.lgas[D.lga[r]])+'</small></a></li>').join("")
+      :'<li style="padding:10px 12px;color:var(--fg-3);font-weight:600;font-size:14px">No taxpayer matches “'+esc(input.value)+'”. Try the notice number, TTIN or part of the business name.</li>';
   };
   input.addEventListener("input",draw);
   input.addEventListener("keydown",e=>{
@@ -956,69 +1004,197 @@ function bindLookup(input,list){
   });
   document.addEventListener("click",e=>{if(!list.contains(e.target)&&e.target!==input) list.hidden=true},{once:false});
 }
+function noticeLines(r){
+  const H=D.H, fees=D.feeHeads, hv=h=>D.headAmt[r*H+h];
+  let sub=0; for(let h=0;h<fees;h++) sub+=hv(h);
+  let lineSum=sub; for(let h=fees;h<H;h++) lineSum+=hv(h);
+  return {H,fees,hv,sub,lineSum};
+}
+
 function renderNotice(id){
-  const r=id!=null?D.byId.get(id):undefined;
-  simpleBand("Demand notices","Open the Consolidated Demand Notice for any taxpayer: the full levy breakdown, the payments received each month, and the balance. Print it or save it as PDF.");
-  const lookup='<div class="lookup no-print"><label class="sr-only" for="nq">Find a taxpayer</label><div class="search">'+IC.search+'<input class="input" id="nq" type="search" placeholder="Search by taxpayer ID or business name" autocomplete="off" aria-controls="nlist"></div><ul class="lookup-list" id="nlist" hidden></ul></div>';
+  const r=id!=null?(D.byId.get(id)??findNotice(id)):undefined;
+  simpleBand("Demand notices","Open the Consolidated Demand Notice for any taxpayer by notice number, TTIN, registration ID or business name. Print it, or download the receipt once it is settled.");
+  const lookup='<div class="lookup no-print"><label class="sr-only" for="nq">Find a taxpayer</label><div class="search">'+IC.search+'<input class="input" id="nq" type="search" placeholder="Search by notice number, TTIN or business name" autocomplete="off" aria-controls="nlist"></div><ul class="lookup-list" id="nlist" hidden></ul></div>';
   if(r===undefined){
     view.innerHTML=sec("Open a notice")+lookup
-      +(id!=null?'<div class="coverage err" style="margin-top:14px;max-width:560px">'+IC.alert+'<span>No taxpayer with the ID “'+esc(id)+'” is in the registry. Search for the business by name instead.</span></div>':"")
-      +'<div class="empty" style="margin-top:22px"><h3>Search for a business to open its notice</h3><p>Type a taxpayer ID such as TR/MSME/2025/00001, or part of the business name. You can also open any notice from the taxpayer registry or the top contributors on the dashboard.</p><a class="btn btn-quiet" href="#/registry">Browse the taxpayer registry'+IC.arrow+'</a></div>';
+      +(id!=null?'<div class="coverage err" style="margin-top:14px;max-width:560px">'+IC.alert+'<span>No demand notice matches “'+esc(id)+'”. Search for the business by name instead.</span></div>':"")
+      +'<div class="empty" style="margin-top:22px"><h3>Search for a business to open its notice</h3><p>Type a notice number such as '+esc(D.dn[0])+', a TTIN, or part of the business name. You can also open any notice from the taxpayer registry.</p><a class="btn btn-quiet" href="#/registry">Browse the taxpayer registry'+IC.arrow+'</a></div>';
     bindLookup(view.querySelector("#nq"),view.querySelector("#nlist"));
     view.querySelector("#nq").focus();
     return;
   }
-  const H=D.H, fees=D.feeHeads;
-  const hv=h=>D.headAmt[r*H+h];
-  let sub=0; for(let h=0;h<fees;h++) sub+=hv(h);
-  let lineSum=sub; for(let h=fees;h<H;h++) lineSum+=hv(h);
-  const total=D.total[r], paid=D.paidAll[r], bal=total-paid;
-  const yrs=[...new Set(D.months.map(m=>m.slice(0,4)))].join(", ");
+  const {H,fees,hv,sub,lineSum}=noticeLines(r);
+  const total=D.total[r], settled=isSettled(r);
   let rows='';
   for(let h=0;h<fees;h++) rows+='<tr><td>'+(h+1)+'</td><td>'+esc(D.heads[h])+'</td><td class="r">'+nf2.format(hv(h)/100)+'</td></tr>';
   rows+='<tr class="subtotal"><td></td><td>Sub-total fees</td><td class="r">'+nf2.format(sub/100)+'</td></tr>';
   for(let h=fees;h<H;h++) rows+='<tr><td>'+(h+1)+'</td><td>'+esc(D.heads[h])+'</td><td class="r">'+nf2.format(hv(h)/100)+'</td></tr>';
-  rows+='<tr class="grand"><td></td><td>Total harmonized assessment</td><td class="r">₦'+nf2.format(total/100)+'</td></tr>';
-  const months=D.months.map((m,i)=>'<div><small>'+esc(monthShort(m)+" "+m.slice(0,4))+'</small><b>'+naira(D.pay[r*D.M+i])+'</b></div>').join("");
-  const phone=D.phone[r]||"Not on record";
+  rows+='<tr class="grand"><td></td><td>Total</td><td class="r">₦'+nf2.format(total/100)+'</td></tr>';
   view.innerHTML=
     '<div class="notice-bar no-print"><a class="btn btn-quiet btn-sm" href="#/registry">'+IC.back+'Taxpayer registry</a>'
-      +'<div class="actions"><button class="btn btn-quiet" id="ncsv" type="button">'+IC.dl+'Download (CSV)</button><button class="btn btn-primary" id="nprint" type="button">'+IC.print+'Print notice</button></div></div>'
+      +'<div class="actions">'
+        +(settled?'<button class="btn btn-quiet" id="nrcpt" type="button">'+IC.dl+'Download receipt</button>'
+                 :'<a class="btn btn-quiet" href="#/pay/'+encodeURIComponent(D.dn[r])+'">'+IC.arrow+'Payment page</a>')
+        +'<button class="btn btn-quiet" id="ncsv" type="button">'+IC.dl+'Download (CSV)</button><button class="btn btn-primary" id="nprint" type="button">'+IC.print+'Print notice</button></div></div>'
     +lookup
-    +'<article class="paper" aria-label="Consolidated Demand Notice">'
+    +'<article class="paper" aria-label="Assessment notice">'
       +'<header class="doc-head"><img src="'+document.querySelector(".brand img").src+'" alt="Taraba State coat of arms">'
-        +'<div><div class="gov">Taraba State Government</div><h2>Consolidated Demand Notice</h2><div class="svc">Taraba State Internal Revenue Service · '+esc(yrs)+' harmonized assessment</div></div>'
-        +'<div class="doc-no"><small>Taxpayer ID</small><b>'+esc(D.id[r])+'</b></div></header>'
+        +'<div class="doc-title"><h2>'+esc(BILLING.name)+'</h2><div class="svc">'+esc(BILLING.address)+'<br>'+esc(BILLING.tel)+'</div></div>'
+        +'<a class="doc-qr" href="#/pay/'+encodeURIComponent(D.dn[r])+'" aria-label="Open the payment page for this notice">'+qrSvg(payUrl(D.dn[r]),"Scan to pay notice "+D.dn[r])+'</a></header>'
       +'<dl class="doc-meta">'
-        +'<div class="wide"><dt>Business name</dt><dd>'+esc(D.name[r])+'</dd></div>'
-        +'<div class="wide"><dt>Business address</dt><dd>'+esc(D.addr[r])+'</dd></div>'
-        +'<div><dt>Local government area</dt><dd>'+esc(D.lgas[D.lga[r]])+'</dd></div>'
-        +'<div><dt>Phone</dt><dd>'+esc(phone)+'</dd></div>'
-        +'<div><dt>Business category</dt><dd>'+esc(D.cats[D.cat[r]])+'</dd></div>'
-        +'<div><dt>Business size · class</dt><dd>'+esc(D.sizes[D.size[r]]+" · "+D.classes[D.cls[r]].replace(/s$/,""))+'</dd></div>'
+        +'<div><dt>Assessment Date</dt><dd>'+esc(dateUS(D.assessmentDate))+'</dd></div>'
+        +'<div class="right"><dt>Due Date</dt><dd>'+esc(dateUS(D.dueDate))+'</dd></div>'
+        +'<div><dt>TIRS TIN</dt><dd>'+esc(D.tin[r]||"Not on record")+'</dd></div>'
+        +'<div class="right"><dt>Assessment Number</dt><dd>'+esc(D.dn[r])+'</dd></div>'
       +'</dl>'
+      +'<div class="doc-to"><b>'+esc(D.name[r])+'</b><span>'+esc(D.addr[r])+'</span></div>'
+      +'<div class="doc-letter"><p class="salute">Dear Esteemed Taxpayer,</p>'
+        +'<p>In line with the provisions of the Taraba State Presumptive Tax and Revenue Harmonisation Law, 2025 and other enabling laws, we write to present your organization\'s obligation due to Taraba State Government for '+esc(D.taxYear)+' Tax Year with respect to the under listed revenue items:</p></div>'
+      +'<h3 class="doc-h">ASSESSMENT NOTICE FEES &amp; LEVIES</h3>'
       +'<div class="table-wrap"><table class="doc-table"><thead><tr><th style="width:44px">#</th><th>Revenue head</th><th class="r">Amount (₦)</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
-      +'<p class="doc-words">Amount in words: <i>'+esc(amountWords(total))+'</i></p>'
-      +(Math.abs(lineSum-total)>=1?'<p class="doc-note">The revenue heads above add up to '+naira(lineSum)+'. The registry records the total harmonized assessment as '+naira(total)+', which is the amount billed.</p>':"")
-      +'<h3 class="doc-h">Payments received</h3>'
-      +'<div class="months-grid">'+months+'</div>'
-      +'<div class="doc-status"><div><small>Total assessed</small><b>'+naira(total)+'</b></div><div><small>Total paid</small><b>'+naira(paid)+'</b></div>'
-        +'<div class="'+(bal<=ROUNDING?"ok":"due")+'"><small>Balance</small><b>'+(bal<=0?"₦0.00 · Paid in full":bal<=ROUNDING?naira(bal)+" · Paid in full":naira(bal)+" outstanding")+'</b></div></div>'
-      +(bal!==0&&Math.abs(bal)<=ROUNDING?'<p class="doc-note">Total paid differs from the assessment by '+naira(Math.abs(bal))+' because the registry rounds some amounts. The account is treated as paid in full.</p>':"")
-      +'<footer class="doc-foot"><span>Issued by the Taraba State Internal Revenue Service through Taraba Central Billing and Collections.</span><span>Printed '+esc(today())+'</span></footer>'
+      +'<p class="doc-words">Total in words: <i>'+esc(noticeWords(total))+'</i></p>'
+      +(Math.abs(lineSum-total)>=1?'<p class="doc-note">The revenue heads above add up to '+naira(lineSum)+'. The registry records the total as '+naira(total)+', which is the amount billed.</p>':"")
+      +'<div class="doc-letter">'
+        +'<p>You are required to pay the established levies in the sum above within 30 days from the date of the receipt of this notice.</p>'
+        +'<h4>How to Pay</h4><p>This assessment notice can be paid by scanning the QR Code on this document or via the payment portal on <a href="'+PAY_SITE+'#/pay">taraba.govpayhub.com</a></p>'
+        +'<h4>Objection</h4><p>Note that you have the right of objection within the 30 (Thirty) days\' notice period, after which the forward Payment evidence of your conclusion. However, for the Objection to be valid, you are expected to forward Payment of Evidence of your undisputed position alongside your objection can be done via govpayhub.com</p>'
+        +'<p class="sign">Yours sincerely,<br>For: Taraba State Internal Revenue Service</p>'
+        +'<p class="sign">'+esc(BILLING.signatory)+'<br><b>'+esc(BILLING.title)+'</b></p>'
+      +'</div>'
     +'</article>';
   bindLookup(view.querySelector("#nq"),view.querySelector("#nlist"));
   view.querySelector("#nprint").onclick=()=>window.print();
+  const rc=view.querySelector("#nrcpt"); if(rc) rc.onclick=()=>downloadReceipt(r,rc);
   view.querySelector("#ncsv").onclick=()=>{
-    const L=[["Consolidated Demand Notice"],["Taxpayer ID",D.id[r]],["Business name",D.name[r]],["Business address",D.addr[r]],["LGA",D.lgas[D.lga[r]]],["Phone",D.phone[r]],["Business category",D.cats[D.cat[r]]],["Business size",D.sizes[D.size[r]]],[],["Revenue head","Amount (NGN)"]];
+    const L=[[BILLING.name],["Assessment Date",dateUS(D.assessmentDate)],["Due Date",dateUS(D.dueDate)],["TIRS TIN",D.tin[r]],["Assessment Number",D.dn[r]],["Business name",D.name[r]],["Business address",D.addr[r]],[],["Revenue head","Amount (NGN)"]];
     for(let h=0;h<fees;h++) L.push([D.heads[h],plain2(hv(h))]);
     L.push(["Sub-total fees",plain2(sub)]);
     for(let h=fees;h<H;h++) L.push([D.heads[h],plain2(hv(h))]);
-    L.push(["Total harmonized assessment",plain2(total)],[],["Month","Paid (NGN)"]);
-    D.months.forEach((m,i)=>L.push([monthLong(m),plain2(D.pay[r*D.M+i])]));
-    L.push(["Total paid",plain2(paid)],["Balance",plain2(bal)]);
-    csvDownload("TIRS_Demand_Notice_"+D.id[r].replace(/\//g,"-")+".csv",L);
+    L.push(["Total",plain2(total)],["Total in words",noticeWords(total)]);
+    csvDownload("TIRS_Demand_Notice_"+D.dn[r]+".csv",L);
   };
+}
+function dateUS(iso){const [y,m,d]=iso.split("-").map(Number);return MONTHS_LONG[m-1]+" "+d+", "+y}
+
+/* =========================================================================
+   Pay demand notices: find a notice by its number or TTIN (the QR codes land here),
+   or download the receipt once it is settled
+   ========================================================================= */
+function renderPay(q){
+  simpleBand("Pay demand notices","Find your notice using TTIN or Notice Number, or scan the QR code on your demand notice. Settled notices have a receipt to download.");
+  const r=q!=null?findNotice(q):undefined;
+  view.innerHTML=sec("Search demand notice")
+    +'<form class="pay-search" id="pform" novalidate>'
+      +'<div class="field"><label for="pq">TTIN or Notice Number</label><div class="search">'+IC.search+'<input class="input" id="pq" type="search" autocomplete="off" spellcheck="false" placeholder="e.g. '+esc(D.dn[0])+' or '+esc(D.tin[0]||"TTIN")+'" value="'+esc(q||"")+'"></div></div>'
+      +'<button class="btn btn-primary" type="submit">'+IC.search+'Search</button>'
+    +'</form>'
+    +'<div id="pres"></div>';
+  const form=view.querySelector("#pform"), input=view.querySelector("#pq"), res=view.querySelector("#pres");
+  form.onsubmit=e=>{e.preventDefault(); const v=input.value.trim(); if(!v){input.setAttribute("aria-invalid","true");input.focus();return} location.hash="#/pay/"+encodeURIComponent(v)};
+  input.oninput=()=>input.removeAttribute("aria-invalid");
+  if(q==null){
+    res.innerHTML=
+      '<div class="empty" style="margin-top:22px">'
+        +'<h3>Enter a notice number or TTIN</h3>'
+        +'<p>Notice numbers start with DN (for example <b>'+esc(D.dn[0])+'</b>). TTINs start with TTIN. Both are printed at the top of every demand notice.</p>'
+      +'</div>';
+    input.focus(); return;
+  }
+  if(r===undefined){
+    input.setAttribute("aria-invalid","true");
+    res.innerHTML='<div class="coverage err" role="alert" style="margin-top:16px">'+IC.alert+'<span>No demand notice matches “'+esc(q)+'”. Check the number: notice numbers start with DN and have 15 digits; TTINs start with TTIN.</span></div>';
+    return;
+  }
+  const total=D.total[r], paid=D.paidAll[r], bal=Math.max(0,total-paid), settled=isSettled(r);
+  res.innerHTML=
+    '<div class="pay-card">'
+      +'<div class="figs pay-figs">'
+        +'<div class="fig lead-cell"><div class="fig-label">Assessment Number</div><div class="fig-value lead num">'+esc(D.dn[r])+'</div>'
+          +'<div class="fig-sub"><b style="color:var(--fg)">'+esc(D.name[r])+'</b><br>'+esc(D.addr[r])+'</div></div>'
+        +'<div class="fig"><div class="fig-label">TIRS TIN</div><div class="fig-value" style="font-size:18px">'+esc(D.tin[r]||"Not on record")+'</div><div class="fig-sub">'+esc(D.taxYear)+' Tax Year</div></div>'
+        +'<div class="fig"><div class="fig-label">Status</div><div class="fig-value">'+(settled?'<span class="pill ok">'+IC.check+'Settled</span>':'<span class="pill due">'+IC.alert+'Outstanding</span>')+'</div><div class="fig-sub">Due '+esc(dateUS(D.dueDate))+'</div></div>'
+        +'<div class="fig"><div class="fig-label">Amount assessed</div><div class="fig-value">'+naira(total)+'</div><div class="fig-sub">Assessed '+esc(dateUS(D.assessmentDate))+'</div></div>'
+        +'<div class="fig"><div class="fig-label">'+(settled?"Amount paid":"Balance to pay")+'</div><div class="fig-value">'+naira(settled?paid:bal)+'</div><div class="fig-sub">'+(settled?"Balance ₦0.00":naira(paid)+" paid so far")+'</div></div>'
+      +'</div>'
+      +'<div class="pay-actions">'
+        +(settled
+          ?'<button class="btn btn-primary" id="prcpt" type="button">'+IC.dl+'Download receipt</button>'
+          :'')
+        +'<a class="btn '+(settled?"btn-quiet":"btn-primary")+'" href="'+noticeHref(D.id[r])+'">View demand notice</a>'
+      +'</div>'
+      +'<p class="note">'+(settled?"This notice is settled: the payments recorded for "+esc(D.taxYear)+" cover the full assessment."
+        :"This notice has an outstanding balance of "+naira(bal)+", due "+esc(dateUS(D.dueDate))+". Online payment is not yet available on this platform.")+'</p>'
+    +'</div>';
+
+  const b=res.querySelector("#prcpt"); if(b) b.onclick=()=>downloadReceipt(r,b);
+}
+
+/* Receipt for a settled notice (PDF, drawn with jsPDF) */
+function downloadReceipt(r,btn){
+  if(!window.jspdf){alert("The PDF tool is missing from this file. Rebuild it with build.py.");return}
+  const label=btn.innerHTML; btn.disabled=true; btn.innerHTML=IC.dl+"Preparing receipt…";
+  setTimeout(()=>{
+    try{
+      const {jsPDF}=window.jspdf, doc=new jsPDF({unit:"pt",format:"a4",compress:true});
+      const W=doc.internal.pageSize.getWidth(), M=48, BAND=[11,61,46], INK=[23,23,23], MUTED=[107,106,103], GREEN=[23,116,74];
+      const {H,fees,hv,sub}=noticeLines(r), total=D.total[r], paid=D.paidAll[r];
+      const money=k=>"NGN "+nf2.format(k/100);
+      const paidMonths=D.months.filter((m,i)=>D.pay[r*D.M+i]>0);
+      // letterhead
+      doc.addImage(document.querySelector(".brand img").src,"PNG",M,M-8,52,52);
+      doc.setTextColor(...INK); doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.text(BILLING.name,M+64,M+8);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...MUTED);
+      doc.text(pdfSafe(BILLING.address),M+64,M+23); doc.text(pdfSafe(BILLING.tel),M+64,M+35);
+      doc.setDrawColor(...BAND); doc.setLineWidth(1.5); doc.line(M,M+56,W-M,M+56);
+      // title + status
+      let y=M+86;
+      doc.setTextColor(...INK); doc.setFont("helvetica","bold"); doc.setFontSize(17); doc.text("PAYMENT RECEIPT",M,y);
+      doc.setDrawColor(...GREEN); doc.setTextColor(...GREEN); doc.setLineWidth(1.2); doc.roundedRect(W-M-86,y-16,86,22,4,4,"S");
+      doc.setFontSize(10); doc.text("SETTLED",W-M-43,y-1,{align:"center"});
+      // reference fields
+      y+=30;
+      const field=(label,val,x,yy,right)=>{doc.setFont("helvetica","normal");doc.setFontSize(8.5);doc.setTextColor(...MUTED);doc.text(label,x,yy,right?{align:"right"}:undefined);
+        doc.setFont("helvetica","bold");doc.setFontSize(10.5);doc.setTextColor(...INK);doc.text(pdfSafe(val),x,yy+14,right?{align:"right"}:undefined)};
+      field("Assessment Number",D.dn[r],M,y); field("TIRS TIN",D.tin[r]||"Not on record",W-M,y,true);
+      y+=36; field("Tax Year",String(D.taxYear),M,y); field("Assessment Date",dateUS(D.assessmentDate),W-M,y,true);
+      y+=36; field("Received from",D.name[r],M,y);
+      doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(...MUTED); doc.text(pdfSafe(D.addr[r]),M,y+28);
+      // revenue items settled
+      y+=52;
+      doc.setFillColor(...BAND); doc.rect(M,y,W-2*M,20,"F");
+      doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(8.5);
+      doc.text("#",M+8,y+13); doc.text("REVENUE HEAD",M+34,y+13); doc.text("AMOUNT (NGN)",W-M-8,y+13,{align:"right"});
+      y+=20; doc.setFontSize(9.5);
+      const line=(n,label,amt,bold,shade)=>{
+        if(shade){doc.setFillColor(...shade); doc.rect(M,y,W-2*M,18,"F");}
+        doc.setTextColor(...INK); doc.setFont("helvetica",bold?"bold":"normal");
+        if(n) doc.text(String(n),M+8,y+12.5);
+        doc.text(pdfSafe(label),M+34,y+12.5); doc.text(nf2.format(amt/100),W-M-8,y+12.5,{align:"right"});
+        doc.setDrawColor(233,232,229); doc.setLineWidth(0.5); doc.line(M,y+18,W-M,y+18); y+=18;
+      };
+      for(let h=0;h<fees;h++) line(h+1,D.heads[h],hv(h));
+      line(0,"Sub-total fees",sub,true,[250,250,248]);
+      for(let h=fees;h<H;h++) line(h+1,D.heads[h],hv(h));
+      doc.setDrawColor(...BAND); doc.setLineWidth(1.2); doc.line(M,y,W-M,y);
+      line(0,"Total assessed",total,true,[243,246,244]);
+      // settlement summary
+      y+=16;
+      const sumRow=(label,val,bold)=>{doc.setFont("helvetica",bold?"bold":"normal");doc.setFontSize(10.5);doc.setTextColor(...INK);doc.text(label,W-M-190,y);doc.text(val,W-M,y,{align:"right"});y+=16};
+      sumRow("Amount paid",money(paid),true);
+      sumRow("Balance",money(Math.max(0,total-paid)),false);
+      y+=6;
+      doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(...MUTED);
+      doc.text(doc.splitTextToSize(pdfSafe("Amount paid in words: "+noticeWords(paid)),W-2*M),M,y); y+=28;
+      if(paidMonths.length) { doc.text(pdfSafe("Payments recorded: "+monthLong(paidMonths[0])+(paidMonths.length>1?" to "+monthLong(paidMonths[paidMonths.length-1]):"")+"."),M,y); y+=14; }
+      doc.text(pdfSafe("This receipt confirms that the assessment above is fully settled in the Taraba State Central Billing System records."),M,y);
+      // sign-off + footer
+      y+=40; doc.setTextColor(...INK); doc.setFontSize(10); doc.text("For: Taraba State Internal Revenue Service",M,y);
+      const Hp=doc.internal.pageSize.getHeight();
+      doc.setFontSize(7.5); doc.setTextColor(...MUTED); doc.text(pdfSafe(generatedLine()),M,Hp-30); doc.text(pdfSafe(D.dn[r]),W-M,Hp-30,{align:"right"});
+      doc.save("TIRS_Receipt_"+D.dn[r]+".pdf");
+    }catch(e){console.error(e); alert("The receipt could not be created: "+e.message)}
+    finally{btn.disabled=false; btn.innerHTML=label}
+  },30);
 }
 
 /* =========================================================================
@@ -1075,7 +1251,7 @@ function buildStatReport(p){
   const L=D.stat.find(s=>s.key===p.type), keep=reportFilter(p), H=D.H, fees=D.feeHeads;
   const kindOf=f=>(f==="sub"||f==="total"||f==="billed"||f.startsWith("head:")||f.startsWith("month:"))?"m":"t";
   const get={
-    id:r=>D.id[r], name:r=>D.name[r], entity:r=>D.entities[D.cls[r]], lga:r=>D.lgas[D.lga[r]], addr:r=>D.addr[r], cat:r=>D.cats[D.cat[r]],
+    id:r=>D.id[r], tin:r=>D.tin[r], name:r=>D.name[r], entity:r=>D.entities[D.cls[r]], lga:r=>D.lgas[D.lga[r]], addr:r=>D.addr[r], cat:r=>D.cats[D.cat[r]],
     size:r=>D.sizes[D.size[r]], total:r=>D.total[r], billed:r=>D.paidAll[r],
     // the sheet stores phone numbers as numbers (no leading zero); reproduce that
     phone:r=>L.phoneNumeric&&D.phone[r]?Number(D.phone[r]):D.phone[r],
@@ -1542,14 +1718,15 @@ function route(){
   if(!D) return;
   hideTip();
   const h=location.hash.replace(/^#\/?/,""), [name,...rest]=h.split("/");
-  const r=["dashboard","registry","notice","reports"].includes(name)?name:"dashboard";
+  const r=["dashboard","registry","notice","pay","reports"].includes(name)?name:"dashboard";
   document.querySelectorAll(".nav-link[data-route]").forEach(a=>{if(a.dataset.route===r)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   document.body.dataset.route=r;
-  const titles={dashboard:"Collections dashboard",registry:"Taxpayer registry",notice:"Demand notices",reports:"Reports and downloads"};
+  const titles={dashboard:"Collections dashboard",registry:"Taxpayer registry",notice:"Demand notices",pay:"Pay demand notices",reports:"Reports and downloads"};
   document.title=titles[r]+" · Taraba Central Billing and Collections";
   if(r==="dashboard") renderDashboard();
   else if(r==="registry") renderRegistry();
   else if(r==="notice") renderNotice(rest.length?decodeURIComponent(rest.join("/")):null);
+  else if(r==="pay") renderPay(rest.length?decodeURIComponent(rest.join("/")):null);
   else renderReports();
   if(r!=="dashboard"||route.last!=="dashboard") window.scrollTo(0,0);
   route.last=r;

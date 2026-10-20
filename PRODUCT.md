@@ -8,7 +8,8 @@ web
 
 ## Stack
 
-Single self-contained offline HTML file (user's choice). The 39,981 registry records are embedded at build time by a Python build script (`build.py`) that reads the single consolidated registry workbook; re-running the script regenerates the file when new data arrives. No server, no install, no network dependency at runtime.
+- **Staff console:** a self-contained HTML file (`taraba-billing.html`) with the 39,981 registry records embedded at build time by `build.py`, which reads the single consolidated registry workbook. It still works offline from disk; online it is served only to signed-in officers.
+- **Payment server (user's choice, October 2026):** everything on one VPS with Docker Compose: Python (FastAPI) + PostgreSQL + a background worker + Caddy for HTTPS (`server/`, `deploy/`). The public page (`src/public.html`, built to `build/site/index.html`) carries no registry and fetches one notice at a time by full notice number or TTIN. Staff sign in with named accounts (Argon2 passwords, server-side sessions, audit log). Payments use Monnify (server-initialised checkout, verified with Monnify's API before anything is recorded). See `deploy/README.md` and `docs/monnify-integration-plan.md`.
 
 ## Users
 
@@ -29,6 +30,10 @@ It works from the state's own Consolidated Demand Notice (CDN) billing registry,
 - Monthly columns are **payments collected** that month (re-confirmed by the user for this file, despite the "Total Billed 2025" header, which is the sum of the months). In this dataset every row reconciles exactly: sub-total, assessment and monthly collections agree to the kobo.
 - Collections are recorded per month, not per day; date-range reports resolve to whole months.
 - The statutory breakdown is one report, not split: the whole registry sheet regenerated in its own design (sheet name, headers, column order, fonts, fills, widths, frozen panes, number formats and any formulas), all read by `build.py` from the workbook itself.
+- Demand notices follow the wording of the official Taraba State Central Billing System notice (sample: `DN175804411896133.pdf`): letterhead, Assessment Date, Due Date, TIRS TIN, Assessment Number, the paragraph citing the Taraba State Presumptive Tax and Revenue Harmonisation Law, 2025, How to Pay, Objection (kept verbatim), and the Executive Chairman's sign-off. The platform keeps its own levy table (no agency or revenue-code columns) and shows no monthly payment breakdown on the notice.
+- TIRS TIN comes from the sheet's first column. The spreadsheet has no notice numbers, so `build.py` generates a stable one per business (DN + tax year + class digit + serial + check digits). By the user's choice these are platform-generated: GovPayHub does not know them until TIRS registers them there.
+- Every notice has one assessment date for the tax year (23 December 2025, set in `build.py`), due 30 days later.
+- The Pay demand notices page (`#/pay/<notice number or TTIN>`, where the QR codes land) finds a notice and shows its status from the 2025 collections return; settled notices offer a PDF statement of what the return records. Online payment is not live: it is being built on Monnify, with a server on a VPS that creates each payment at the notice's exact amount, verifies it with Monnify before recording it, and keeps a payment ledger separate from the spreadsheet (plan: `docs/monnify-integration-plan.md`). A simulated card/transfer/USSD checkout that stored fake payments in the browser was removed in October 2026; nothing on the platform may take card details or issue references for payments it has not verified.
 - Exported documents never show the source file name; they carry "Generated <date> · Taraba State Internal Revenue Service".
 - Payments are not split by revenue head in the source. Any revenue-head view of a period apportions receipts in proportion to each business's assessment and must say so.
 
